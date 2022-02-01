@@ -1,0 +1,456 @@
+package frc.robot;
+
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.kauailabs.navx.frc.AHRS;
+
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
+
+public class Robot extends TimedRobot {
+  private static final int LeftChannel1 = 3;
+  private static final int LeftChannel2 = 4;
+  private static final int RightChannel1 = 5;
+  private static final int RightChannel2 = 6;
+  private static final int Linear1 = 7;
+
+  WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(LeftChannel1);
+  WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(LeftChannel2);
+  WPI_TalonSRX motorRight1 = new WPI_TalonSRX(RightChannel1);
+  WPI_TalonSRX motorRight2 = new WPI_TalonSRX(RightChannel2);
+  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(Linear1);
+
+  MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
+
+  double deadband = 0.1;
+  double slowSpeed = 0.3125;
+  double mediumSpeed = 0.5;
+  double bottomlimit = 450;
+  double toplimit = 3300;
+  
+  AnalogPotentiometer pot = new AnalogPotentiometer(0,3600,30);
+
+  PWMMotorController actuator = new PWMMotorController("actuator", 0) {};
+  
+  Joystick xboxController = new Joystick(0);
+
+  double x_left_trigger, x_right_trigger;
+  boolean x_Ybutton;
+  boolean x_Xbutton;
+  boolean x_Abutton;
+  boolean x_Bbutton;
+  boolean x_right_bumper, x_left_bumper;
+  boolean x_back_button, x_start_button; 
+
+  double x_pov;
+
+  double x_xAxisLeft;
+  double x_yAxisLeft;
+  double x_xAxisRight;
+  double x_yAxisRight;
+
+  boolean hyperSpeed = false;
+  boolean maxSpeed = false;
+  boolean dead = false;
+
+  double distanceToAngle = 0;
+  boolean turn90Auto = false;
+  double rotateToAngleRate;
+  double desiredAngle = 0;
+  double turningRate = 0;
+  boolean turningExtra = false;
+
+  double changeTime1 = 0.0f;
+  double changeTime2 = 0.0f;
+  double diffTime = 0.0f;
+  boolean timeIsBad = true;
+  double changeAngle1 = 0.0f;
+  double changeAngle2 = 0.0f;
+  double diffAngle = 0.0f;
+  boolean angleIsBad = true;
+
+  static final double kP= 0.009;
+  static final double kI= 0.00;
+  static final double kD= 0.00;
+  //static final double kF= 0.0;
+
+  double kToleranceDegrees = 2.0f;
+
+  boolean goingOut = true;
+  boolean isRunning = false;
+  Timer timer = new Timer();
+
+  double turnMotor = 0.0;
+
+  boolean autoOn = false;
+
+  PIDController pid;
+
+  AHRS ahrs = new AHRS(SPI.Port.kMXP);
+
+  @Override
+  public void robotInit() {
+
+    pid = new PIDController(kP, kI, kD);
+    pid.enableContinuousInput(-180.0f, 180.0f);
+    pid.setTolerance(kToleranceDegrees);
+    ahrs.reset();
+
+    timer.reset();
+    timer.start();
+
+    leftGroup.setInverted(true);
+    motorLeft1.setInverted(true);
+    motorLeft2.setInverted(true);
+  }
+
+  @Override
+  public void teleopPeriodic() {
+    ReadJoystick();
+    ReadSensors();
+    MoveRobot();
+  }
+
+  public void ReadJoystick(){
+    x_Xbutton = xboxController.getRawButton(3);
+    x_Ybutton = xboxController.getRawButton(4);
+    x_Bbutton = xboxController.getRawButton(2);
+    x_Abutton = xboxController.getRawButton(1);
+    x_right_bumper = xboxController.getRawButton(6);
+    x_left_bumper = xboxController.getRawButton(5);
+    x_back_button = xboxController.getRawButton(7);
+    x_start_button = xboxController.getRawButton(8);
+
+    x_left_trigger = xboxController.getRawAxis(2);
+    x_right_trigger = xboxController.getRawAxis(3);
+    x_xAxisLeft = xboxController.getRawAxis(0);
+    x_yAxisLeft = xboxController.getRawAxis(1);
+    x_xAxisRight = xboxController.getRawAxis(4);
+    x_yAxisRight = xboxController.getRawAxis(5);
+    
+    x_pov = xboxController.getPOV();
+  }
+
+  public void ReadSensors() {
+
+   if(ahrs.getAngle() > 360) {
+      ahrs.setAngleAdjustment(ahrs.getAngleAdjustment() - 360);
+      System.out.println("Subtracted 360");
+    } else if(ahrs.getAngle() < 0) {
+      ahrs.setAngleAdjustment(ahrs.getAngleAdjustment() + 360);
+      System.out.println("Added 360");
+    } else {}
+
+    if(angleIsBad) {
+      changeAngle1 = ahrs.getAngle();
+      diffAngle = changeAngle1 - changeAngle2;
+      angleIsBad = false;
+    } else {
+      changeAngle2 = ahrs.getAngle();
+      diffAngle = changeAngle2 - changeAngle1;
+      angleIsBad = true;
+    }
+
+    if(timeIsBad) {
+      changeTime1 = timer.get();
+      diffTime = changeTime1 - changeTime2;
+      timeIsBad = false;
+    } else {
+      changeTime2 = timer.get();
+      diffTime = changeTime2 - changeTime1;
+      timeIsBad = true;
+    }
+
+    turningRate = diffAngle/diffTime;
+    //System.out.println("Angle = " + ahrs.getAngle());
+    System.out.println(x_pov);
+  }
+
+  public void MoveRobot() {
+    
+    //killswitch
+    if(x_start_button) {
+      dead = false;
+      System.out.println("-----REVIVED-----");
+    } else if(x_back_button) {
+      dead = true;
+      System.out.println("-----KILLED-----");
+      timer.reset();
+      timer.start();
+    } else {}
+
+    //Baby Actuator Code    
+    if(x_xAxisLeft > deadband || x_xAxisLeft < -deadband) {
+      actuator.set(x_xAxisLeft);
+    } else {
+      actuator.set(0.0);
+    }
+
+    //Killswitch logic
+    if(dead) {
+      if(timer.get() < 0.1) {
+      motorRight1.set(-motorRight1.get());
+      motorRight2.set(-motorRight2.get());
+      motorLeft1.set(-motorLeft1.get());
+      motorLeft2.set(-motorLeft2.get());
+      } else {
+      motorRight1.set(0);
+      motorRight2.set(0);
+      motorLeft1.set(0);
+      motorLeft2.set(0);
+      }
+    } else {
+
+    //Hyperspeed
+    if(x_right_bumper && x_left_bumper) {
+      hyperSpeed = true;
+    } else {
+      hyperSpeed = false;
+    }
+
+    //Hyperspeed forward/backward
+    if((x_yAxisLeft >= deadband && hyperSpeed) && ((x_left_trigger < deadband) && (x_right_trigger < deadband))){
+      motorLeft1.set(x_yAxisLeft);
+      motorLeft2.set(x_yAxisLeft);
+      motorRight1.set(-x_yAxisLeft);
+      motorRight2.set(-x_yAxisLeft);
+      System.out.println("Hyperspeed backward");
+    } else if((x_yAxisLeft <= -deadband && hyperSpeed) && ((x_left_trigger < deadband) && (x_right_trigger < deadband))){
+      motorLeft1.set(x_yAxisLeft);
+      motorLeft2.set(x_yAxisLeft);
+      motorRight1.set(-x_yAxisLeft);
+      motorRight2.set(-x_yAxisLeft);
+      System.out.println("Hyperspeed forward");
+    } else {}
+
+    //Forward/backward (not hyperspeed)
+    if(((x_yAxisLeft >= deadband || x_yAxisLeft <= -deadband) && hyperSpeed == false) && ((x_left_trigger < deadband) && (x_right_trigger < deadband))) {
+      motorLeft1.set(x_yAxisLeft*slowSpeed);
+      motorLeft2.set(x_yAxisLeft*slowSpeed);
+      motorRight1.set(-x_yAxisLeft*slowSpeed);
+      motorRight2.set(-x_yAxisLeft*slowSpeed);
+      System.out.println("moving forward/backward");
+    } else if(((x_yAxisLeft <= deadband || x_yAxisLeft >= -deadband) && hyperSpeed == false) && ((x_left_trigger < deadband) && (x_right_trigger < deadband))) {
+      motorLeft1.set(0);
+      motorLeft2.set(0);
+      motorRight1.set(0);
+      motorRight2.set(0);
+     // System.out.println("stopped");
+    } else {}
+
+    //turning while moving (not hyperspeed)
+
+    //turning forward right
+    if(((x_yAxisLeft <= -deadband) && (x_right_trigger > deadband) && (x_left_trigger < deadband)) && (hyperSpeed == false)) {
+      //turning forward right while not max
+      if(x_yAxisLeft < -x_right_trigger) {
+        motorLeft1.set(x_yAxisLeft*mediumSpeed);
+        motorLeft2.set(x_yAxisLeft*mediumSpeed);
+        motorRight1.set((-x_yAxisLeft - x_right_trigger)*slowSpeed);
+        motorRight2.set((-x_yAxisLeft - x_right_trigger)*slowSpeed);
+        System.out.println("forward right NOT max");
+      //turning forward right while max
+      } else if(x_yAxisLeft >= -x_right_trigger) {
+        motorLeft1.set(-slowSpeed*2);
+        motorLeft2.set(-slowSpeed*2);
+        motorRight1.set(-slowSpeed*0.16);
+        motorRight2.set(-slowSpeed*0.16);
+        System.out.println("forward right MAX");
+      } else {}
+    //turning forward left
+    } else if(((x_yAxisLeft <= -deadband) && (x_left_trigger > deadband) && (x_right_trigger < deadband)) && (hyperSpeed == false)) {
+      //turning forward left while not max
+      if(x_yAxisLeft < -x_left_trigger) {
+        motorLeft1.set((x_yAxisLeft + x_left_trigger)*slowSpeed);
+        motorLeft2.set((x_yAxisLeft + x_left_trigger)*slowSpeed);
+        motorRight1.set(-x_yAxisLeft*mediumSpeed);
+        motorRight2.set(-x_yAxisLeft*mediumSpeed);
+        System.out.println("forward left NOT max");
+      //turning forward left while max
+      } else if(x_yAxisLeft >= -x_left_trigger) {
+        motorLeft1.set(slowSpeed*0.16);
+        motorLeft2.set(slowSpeed*0.16);
+        motorRight1.set(slowSpeed*2);
+        motorRight2.set(slowSpeed*2);
+        System.out.println("forward left MAX");
+      } else {}
+    //turning backward right
+    } else if(((x_yAxisLeft >= deadband) && (x_left_trigger < deadband) && (x_right_trigger > deadband)) && (hyperSpeed == false)) {
+      if(x_yAxisLeft > x_right_trigger) {
+        motorLeft1.set((x_yAxisLeft + x_right_trigger)*slowSpeed);
+        motorLeft2.set((x_yAxisLeft + x_right_trigger)*slowSpeed);
+        motorRight1.set(x_yAxisLeft*mediumSpeed);
+        motorRight2.set(x_yAxisLeft*mediumSpeed);
+        System.out.println("backward right NOT max");
+      //turning backward right while max
+      } else if(x_yAxisLeft <= x_right_trigger) {
+        motorLeft1.set(0);
+        motorLeft2.set(0);
+        motorRight1.set(-slowSpeed*2);
+        motorRight2.set(-slowSpeed*2);
+        System.out.println("backward right MAX");
+      } else {}
+    //turning backward left
+    } else if(((x_yAxisLeft >= deadband) && (x_left_trigger > deadband) && (x_right_trigger < deadband)) && (hyperSpeed == false)) {
+      //turning backward left while not max
+      if(x_yAxisLeft < -x_left_trigger) {
+        motorLeft1.set(x_yAxisLeft*mediumSpeed);
+        motorLeft2.set(x_yAxisLeft*mediumSpeed);
+        motorRight1.set((x_yAxisLeft + x_left_trigger)*slowSpeed);
+        motorRight2.set((x_yAxisLeft + x_left_trigger)*slowSpeed);
+        System.out.println("backward left NOT max");
+      //turning backward left while max
+      } else if(x_yAxisLeft >= -x_left_trigger) {
+        motorLeft1.set(slowSpeed*2);
+        motorLeft2.set(slowSpeed*2);
+        motorRight1.set(-slowSpeed*0);
+        motorRight2.set(-slowSpeed*0);
+        System.out.println("backward left MAX");
+      } else {}
+    } else {}
+
+    //turning in spot (not hyperspeed)
+    if(((x_yAxisLeft <= deadband && x_yAxisLeft >= -deadband) && x_right_trigger > deadband) && x_left_trigger < deadband && hyperSpeed == false) {
+      motorLeft1.set(-x_right_trigger*mediumSpeed);
+      motorLeft2.set(-x_right_trigger*mediumSpeed);
+      motorRight1.set(-x_right_trigger*mediumSpeed);
+      motorRight2.set(-x_right_trigger*mediumSpeed);
+      System.out.println("right turn in SPOT");
+    } else if(((x_yAxisLeft <= deadband && x_yAxisLeft >= -deadband) && x_left_trigger > deadband) && x_right_trigger < deadband && hyperSpeed == false) {
+      motorLeft1.set(x_left_trigger*mediumSpeed);
+      motorLeft2.set(x_left_trigger*mediumSpeed);
+      motorRight1.set(x_left_trigger*mediumSpeed);
+      motorRight2.set(x_left_trigger*mediumSpeed);
+      System.out.println("left turn in SPOT");
+    } else {}
+
+    //linear1 control
+    if (x_yAxisRight>= -deadband){
+      motorLinear1.set(x_yAxisRight*(slowSpeed));
+    }
+    else if (x_yAxisRight<=deadband){
+      motorLinear1.set(x_yAxisRight*(slowSpeed));
+    }
+    else if (x_yAxisRight <= deadband || x_yAxisRight >= -deadband){
+      motorLinear1.set(0);
+    }
+    else {}
+
+    //PID auto move 90 degrees
+    if((x_pov == 90) && turn90Auto == false) {
+      turn90Auto = true;
+      desiredAngle = ahrs.getAngle() + 90f;
+
+      if(desiredAngle > 360) {
+        desiredAngle = desiredAngle - 360;
+      } else {}
+    } else {}
+
+    if(turn90Auto == true) {
+      if(ahrs.getAngle() < desiredAngle) {
+        distanceToAngle = desiredAngle - ahrs.getAngle();
+      } else if(ahrs.getAngle() > desiredAngle) {
+        distanceToAngle = (360 - ahrs.getAngle()) + desiredAngle;
+      } else {}
+
+      if(distanceToAngle < 0) {
+        distanceToAngle = distanceToAngle*-1;
+      } else {}
+
+      distanceToAngle = MathUtil.clamp(distanceToAngle, 0, 90);
+      turnMotor = (-distanceToAngle/90)*(0.72);
+
+      if((ahrs.getAngle() < (desiredAngle - kToleranceDegrees)) || (ahrs.getAngle() > (desiredAngle + kToleranceDegrees))) {
+        timer.reset();
+        timer.start();
+        if((turningRate > 2 || turningRate < -2) && (turningExtra == false)) {
+          motorLeft1.set(turnMotor);
+          motorLeft2.set(turnMotor);
+          motorRight1.set(turnMotor);
+          motorRight2.set(turnMotor);
+          System.out.println("trying to turn");
+        } else if(timer.get() > 0.3){
+          motorLeft1.set(turnMotor*3);
+          motorLeft2.set(turnMotor*3);
+          motorRight1.set(turnMotor*3);
+          motorRight2.set(turnMotor*3);
+          System.out.println("trying to turn extra");
+          turningExtra = true;
+        } else {}
+      } else if((ahrs.getAngle() >= (desiredAngle - 2)) || (ahrs.getAngle() <= (desiredAngle + 2))) {
+        motorLeft1.set(0);
+        motorLeft2.set(0);
+        motorRight1.set(0);
+        motorRight2.set(0);
+        turn90Auto = false;
+        turningExtra = false;
+        System.out.println("stopped autoTurn");
+      }
+    } 
+
+    //Giant actuator
+    if(x_Bbutton && (isRunning == false)) {
+      //timer.reset();
+      //timer.start();
+      isRunning = true;
+    } else {}
+
+    //Giant actuator logic
+    if(isRunning == true) {
+      System.out.println("moving actuator");
+      if(pot.get() < 800 && goingOut == true) {
+        motorLinear1.set(-0.25);
+      } else if(pot.get() < 1200 && goingOut == true) {
+        motorLinear1.set(-0.5);
+      } else if(pot.get() < 2400 && goingOut == true) {
+        motorLinear1.set(-1);
+      } else if(pot.get() < 2800 && goingOut == true) {
+        motorLinear1.set(-0.5);
+      } else if(pot.get() < 3000 && goingOut == true) {
+        motorLinear1.set(-0.25);
+      } else if(pot.get() > 2800) {
+        motorLinear1.set(0.25);
+        goingOut = false;
+      } else if(pot.get() < 2800 && pot.get() > 2400) {
+        motorLinear1.set(0.5);
+      } else if(pot.get() < 2400 && pot.get() > 1200) {
+        motorLinear1.set(1);
+      } else if(pot.get() < 1200 && pot.get() > 800) {
+        motorLinear1.set(0.5);
+      } else if(pot.get() < 800 && pot.get() > 450) {
+        motorLinear1.set(0.25);
+      } else if(pot.get() < 450) {
+        motorLinear1.set(0);
+        goingOut = true;
+        isRunning = false;
+      } else {}
+    }
+  }
+}
+  @Override
+  public void autonomousInit() {
+    timer.reset();
+    timer.start();
+    leftGroup.setInverted(false);
+  }
+
+  @Override
+  public void autonomousPeriodic() {
+    
+    System.out.println("timer: " + timer.get());
+    System.out.println("pot: " + pot.get());
+
+    if(timer.get() < 1) {
+      leftGroup.set(0.5);
+    } else if (timer.get() > 1) {  
+      leftGroup.set(0);
+    }
+
+  } 
+}
