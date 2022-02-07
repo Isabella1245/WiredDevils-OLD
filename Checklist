@@ -1,7 +1,7 @@
 This is for after you have wiped most of the laptops and you have a wiped robot.
 <<ONLY INSTALL ALL PROGRAMS AFTER KICKOFF>>
 
-1) Download -- https://docs.wpilib.org/en/stable/docs/zero-to-robot/step-2/wpilib-setup.html
+1) Download WPILib -- https://docs.wpilib.org/en/stable/docs/zero-to-robot/step-2/wpilib-setup.html
 2) Download FRC Game Tools -- https://www.ni.com/en-us/support/downloads/drivers/download.frc-game-tools.html#440024
 3) Download external libraries
   - This can include Talon SRX or Gyro libraries. 
