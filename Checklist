@@ -1,10 +1,11 @@
 This is for after you have wiped most of the laptops and you have a wiped robot.
 <<ONLY INSTALL ALL PROGRAMS AFTER KICKOFF>>
 
-1) Download WPILib
-2) Download FRC Game Tools
+1) Download -- https://docs.wpilib.org/en/stable/docs/zero-to-robot/step-2/wpilib-setup.html
+2) Download FRC Game Tools -- https://www.ni.com/en-us/support/downloads/drivers/download.frc-game-tools.html#440024
 3) Download external libraries
   - This can include Talon SRX or Gyro libraries. 
+    - Talon SRX: -- https://maven.ctr-electronics.com/release/com/ctre/phoenix/Phoenix-frc2022-latest.json
   - This allows you to import the code to let you control robots or just even use hardware.
 4) Image/Flash the Roborio
   - Use the "Roborio Imaging Tool" that comes with the FRC Game Tools. 
