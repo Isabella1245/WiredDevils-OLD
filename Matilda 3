@@ -7,24 +7,23 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
+import edu.wpi.first.wpilibj.Servo;
 
 public class Robot extends TimedRobot {
-  private static final int LeftChannel1 = 3;
-  private static final int LeftChannel2 = 4;
-  private static final int RightChannel1 = 5;
-  private static final int RightChannel2 = 6;
-  private static final int Linear1 = 7;
 
-  WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(LeftChannel1);
-  WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(LeftChannel2);
-  WPI_TalonSRX motorRight1 = new WPI_TalonSRX(RightChannel1);
-  WPI_TalonSRX motorRight2 = new WPI_TalonSRX(RightChannel2);
-  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(Linear1);
+  WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(3);
+  WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(4);
+  WPI_TalonSRX motorRight1 = new WPI_TalonSRX(5);
+  WPI_TalonSRX motorRight2 = new WPI_TalonSRX(6);
+  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(7);
+
+  Servo servo1 = new Servo(1);
 
   MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
 
@@ -82,9 +81,16 @@ public class Robot extends TimedRobot {
 
   double kToleranceDegrees = 2.0f;
 
+  double PotIn = 2.2;
+  double distToPot;
+  double distPot = PotIn*263; // 263 = 1in
+  double desiredPot;
+  double motorPot;
+
   boolean goingOut = true;
   boolean isRunning = false;
   Timer timer = new Timer();
+  boolean servoAngle = false;
 
   double turnMotor = 0.0;
 
@@ -106,8 +112,8 @@ public class Robot extends TimedRobot {
     timer.start();
 
     leftGroup.setInverted(true);
-    motorLeft1.setInverted(true);
-    motorLeft2.setInverted(true);
+    //motorLeft1.setInverted(true);
+    //motorLeft2.setInverted(true);
   }
 
   @Override
@@ -169,7 +175,7 @@ public class Robot extends TimedRobot {
 
     turningRate = diffAngle/diffTime;
     //System.out.println("Angle = " + ahrs.getAngle());
-    System.out.println(x_pov);
+    System.out.println("pot: " + pot.get());
   }
 
   public void MoveRobot() {
@@ -396,41 +402,45 @@ public class Robot extends TimedRobot {
 
     //Giant actuator
     if(x_Bbutton && (isRunning == false)) {
-      //timer.reset();
-      //timer.start();
       isRunning = true;
+      desiredPot = pot.get() + distPot;
     } else {}
 
     //Giant actuator logic
     if(isRunning == true) {
       System.out.println("moving actuator");
-      if(pot.get() < 800 && goingOut == true) {
-        motorLinear1.set(-0.25);
-      } else if(pot.get() < 1200 && goingOut == true) {
-        motorLinear1.set(-0.5);
-      } else if(pot.get() < 2400 && goingOut == true) {
-        motorLinear1.set(-1);
-      } else if(pot.get() < 2800 && goingOut == true) {
-        motorLinear1.set(-0.5);
-      } else if(pot.get() < 3000 && goingOut == true) {
-        motorLinear1.set(-0.25);
-      } else if(pot.get() > 2800) {
-        motorLinear1.set(0.25);
-        goingOut = false;
-      } else if(pot.get() < 2800 && pot.get() > 2400) {
-        motorLinear1.set(0.5);
-      } else if(pot.get() < 2400 && pot.get() > 1200) {
-        motorLinear1.set(1);
-      } else if(pot.get() < 1200 && pot.get() > 800) {
-        motorLinear1.set(0.5);
-      } else if(pot.get() < 800 && pot.get() > 450) {
-        motorLinear1.set(0.25);
-      } else if(pot.get() < 450) {
+      distToPot = desiredPot - pot.get();
+      motorPot = (distToPot + 2)/(distPot/4);
+      motorPot = MathUtil.clamp(motorPot, 0.12, (PotIn/4));
+      motorPot = MathUtil.clamp(motorPot, 0.12, 1);
+      if(pot.get() < desiredPot - 2) {
+        motorLinear1.set(-motorPot);
+        System.out.println(-motorPot);
+      } else {
         motorLinear1.set(0);
-        goingOut = true;
         isRunning = false;
-      } else {}
+      }
     }
+
+    //servo
+    if(x_xAxisRight > 0) {
+      servo1.setPosition((x_xAxisRight/2) + 0.5);
+    } else if(x_xAxisRight < 0) {
+      servo1.setPosition((x_xAxisRight/2) + 0.5);
+    } else if(x_xAxisRight == 0) {
+      servo1.setPosition(0.5);
+    } 
+
+    /* if(x_Ybutton && servoAngle == false && timer.get() > 0.2) {
+      servo1.setAngle(135);
+      servoAngle = true;
+      timer.reset();
+    } else if(x_Ybutton && servoAngle == true && timer.get() > 0.2) {
+      servo1.setAngle(90);
+      servoAngle = false;
+      timer.reset();
+    } */
+    
   }
 }
   @Override
