@@ -6,8 +6,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-import com.kauailabs.navx.frc.AHRS;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX; //Talon Motor import
+
+import com.kauailabs.navx.frc.AHRS; //Gyro import
 
 public class Robot extends TimedRobot {
 
@@ -55,7 +56,8 @@ public class Robot extends TimedRobot {
   double babySpeed = slowSpeed / 2;
 
   Timer timer = new Timer();
-  AHRS ahrs = new AHRS(SPI.Port.kMXP);
+
+  AHRS gyro = new AHRS(SPI.Port.kMXP);
 
   @Override
   public void robotInit() {
@@ -189,3 +191,4 @@ public class Robot extends TimedRobot {
 
   }
 }
+
