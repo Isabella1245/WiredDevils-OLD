@@ -8,10 +8,10 @@ This is for after you have wiped most of the laptops and you have a wiped robot.
     - Talon SRX: Make sure you download phoenix framework software -- https://store.ctr-electronics.com/software/
       - This might be blocked so you might need to use a hotspot through your phone
   - This allows you to import the code to let you control robots or just even use hardware.
-4) Image/Flash the Roborio
+4) Image/Flash the Roborio (NOT ALWAYS NEEDED)
   - Use the "Roborio Imaging Tool" that comes with the FRC Game Tools. 
   - Make sure you plug in an ethernet cable and a printer cable directly from the computer to the roborio. (remove the router's ethernet)
-5) Install new firmware onto the motors using "Phoenix Tuner"
+5) Install new firmware onto the motors using "Phoenix Tuner" (NOT ALWAYS NEEDED)
   - Keep the ethernet cord and printer cable plugged in and use "Phoenix Tuner"
   - Click on run "Run Temporary Diagnostics Server"
   - Then after it says it's ood, go to CAN Devices and choose the ID's that corresponds with the board.
@@ -24,5 +24,9 @@ This is for after you have wiped most of the laptops and you have a wiped robot.
   - Select "Install new libraries (offline)"
   - Check off all of the libraries you want to have installed
   - If you want to remove a library you can always use "Manage Current Libraries"
-8) Code
+8) Disable firewalls for the FRC programs by going through the Windows Firewall applications
+  - Make sure that it's disabled for both private and public networks
+  - If you cannot connect to the roborio this is probably the reason
+9) Code
   - Make sure you import what you want
+  - Also make sure the various statements are in the right classes
