@@ -28,5 +28,6 @@ This is for after you have wiped most of the laptops and you have a wiped robot.
   - Make sure that it's disabled for both private and public networks
   - If you cannot connect to the roborio this is probably the reason
 9) Code
+  - << CODE IN Robot.java NOT Main.java >>
   - Make sure you import what you want
   - Also make sure the various statements are in the right classes
