@@ -1,0 +1,191 @@
+package frc.robot;
+
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.kauailabs.navx.frc.AHRS;
+
+public class Robot extends TimedRobot {
+
+  WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(0);
+  WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(1);
+  WPI_TalonSRX motorRight1 = new WPI_TalonSRX(14);
+  WPI_TalonSRX motorRight2 = new WPI_TalonSRX(15);
+
+  MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
+  MotorControllerGroup rightGroup = new MotorControllerGroup(motorRight1, motorRight2);
+
+  Joystick lower_xboxController = new Joystick(0);
+  Joystick upper_xboxController = new Joystick(1);
+
+  //Controller Buttons
+    double lower_left_trigger, lower_right_trigger;
+    boolean lower_Abutton, lower_Bbutton, lower_Xbutton, lower_Ybutton;
+    boolean lower_right_bumper, lower_left_bumper;
+    boolean lower_back_button, lower_start_button; 
+    int lower_pov; // -1: off, 0-360 degrees (45 increments)
+
+    double lower_xAxisLeft, lower_yAxisLeft; // up is negative while down is postive
+    double lower_xAxisRight, lower_yAxisRight;
+
+    double upper_left_trigger, upper_right_trigger;
+    boolean upper_Abutton, upper_Bbutton, upper_Xbutton, upper_Ybutton;
+    boolean upper_right_bumper, upper_left_bumper;
+    boolean upper_back_button, upper_start_button; 
+    int upper_pov; // -1: off, 0-360 degrees (45 increments)
+
+    double upper_xAxisLeft, upper_yAxisLeft; // up is negative while down is postive
+    double upper_xAxisRight, upper_yAxisRight;
+
+    double lower_yAxisLeft_slowSpeed, lower_yAxisRight_slowSpeed;
+    double lower_xAxisLeft_slowSpeed, lower_xAxisRight_slowSpeed;
+    double lower_right_trigger_slowSpeed, lower_left_trigger_slowSpeed;
+
+    double upper_yAxisLeft_slowSpeed, upper_yAxisRight_slowSpeed;
+    double upper_xAxisLeft_slowSpeed, upper_xAxisRight_slowSpeed;
+    double upper_right_trigger_slowSpeed, upper_left_trigger_slowSpeed;
+  //
+  
+  double deadband = 0.05;
+  double slowSpeed = 0.4;
+  double babySpeed = slowSpeed / 2;
+
+  Timer timer = new Timer();
+  AHRS ahrs = new AHRS(SPI.Port.kMXP);
+
+  @Override
+  public void robotInit() {
+    leftGroup.setInverted(true);
+  }
+
+  @Override
+  public void teleopPeriodic() {
+    ReadJoystick();
+    Calculations();
+    MoveLower();
+    MoveUpper();
+  }
+
+  public void ReadJoystick() {
+    lower_Xbutton = lower_xboxController.getRawButton(3);
+    lower_Ybutton = lower_xboxController.getRawButton(4);
+    lower_Bbutton = lower_xboxController.getRawButton(2);
+    lower_Abutton = lower_xboxController.getRawButton(1);
+    lower_right_bumper = lower_xboxController.getRawButton(6);
+    lower_left_bumper = lower_xboxController.getRawButton(5);
+    lower_back_button = lower_xboxController.getRawButton(7);
+    lower_start_button = lower_xboxController.getRawButton(8);
+
+    lower_left_trigger = lower_xboxController.getRawAxis(2);
+    lower_right_trigger = lower_xboxController.getRawAxis(3);
+    lower_xAxisLeft = lower_xboxController.getRawAxis(0);
+    lower_yAxisLeft = -lower_xboxController.getRawAxis(1); // Flipping the sign for y axis
+    lower_xAxisRight = lower_xboxController.getRawAxis(4);
+    lower_yAxisRight = -lower_xboxController.getRawAxis(5); // Flipping the sign for y axis
+    lower_pov = lower_xboxController.getPOV();
+
+    upper_Xbutton = upper_xboxController.getRawButton(3);
+    upper_Ybutton = upper_xboxController.getRawButton(4);
+    upper_Bbutton = upper_xboxController.getRawButton(2);
+    upper_Abutton = upper_xboxController.getRawButton(1);
+    upper_right_bumper = upper_xboxController.getRawButton(6);
+    upper_left_bumper = upper_xboxController.getRawButton(5);
+    upper_back_button = upper_xboxController.getRawButton(7);
+    upper_start_button = upper_xboxController.getRawButton(8);
+
+    upper_left_trigger = upper_xboxController.getRawAxis(2);
+    upper_right_trigger = upper_xboxController.getRawAxis(3);
+    upper_xAxisLeft = upper_xboxController.getRawAxis(0);
+    upper_yAxisLeft = -upper_xboxController.getRawAxis(1); // Flipping the sign for y axis
+    upper_xAxisRight = upper_xboxController.getRawAxis(4);
+    upper_yAxisRight = -upper_xboxController.getRawAxis(5); // Flipping the sign for y axis
+    upper_pov = upper_xboxController.getPOV();
+  }
+  
+  public void Calculations() {
+    lower_yAxisLeft_slowSpeed = lower_yAxisLeft * slowSpeed;
+    lower_xAxisLeft_slowSpeed = lower_xAxisLeft * slowSpeed;
+    lower_yAxisRight_slowSpeed = lower_yAxisRight * slowSpeed;
+    lower_xAxisRight_slowSpeed = lower_xAxisRight * slowSpeed;
+    lower_right_trigger_slowSpeed = lower_right_trigger * slowSpeed;
+    lower_left_trigger_slowSpeed = lower_left_trigger * slowSpeed;
+
+    upper_yAxisLeft_slowSpeed = upper_yAxisLeft * slowSpeed;
+    upper_xAxisLeft_slowSpeed = upper_xAxisLeft * slowSpeed;
+    upper_yAxisRight_slowSpeed = upper_yAxisRight * slowSpeed;
+    upper_xAxisRight_slowSpeed = upper_xAxisRight * slowSpeed;
+    upper_right_trigger_slowSpeed = upper_right_trigger * slowSpeed;
+    upper_left_trigger_slowSpeed = upper_left_trigger * slowSpeed;
+  }
+
+  public void MoveLower() {
+
+    //Backend else
+    if(
+      (lower_yAxisLeft < deadband && lower_yAxisLeft > -deadband)
+      && (lower_yAxisRight < deadband && lower_yAxisRight > -deadband)
+      && (lower_xAxisLeft < deadband && lower_xAxisLeft > -deadband)
+      && (lower_xAxisRight < deadband && lower_xAxisRight > -deadband)
+      && (lower_left_trigger < deadband && lower_right_trigger < deadband)
+      && (!lower_Abutton && !lower_Bbutton && !lower_Xbutton && !lower_Ybutton)
+      && (lower_pov == -1)
+      && (!lower_right_bumper && !lower_left_bumper)
+      && (!lower_back_button && !lower_start_button)
+      )
+    {rightGroup.set(0); leftGroup.set(0); System.out.println("Stopped");} else {
+      
+      //turning while moving backward
+      if((lower_right_trigger > deadband && lower_left_trigger < deadband) && lower_yAxisLeft < -deadband) {
+        leftGroup.set(-lower_right_trigger_slowSpeed);
+        rightGroup.set(lower_right_trigger*babySpeed);
+        System.out.println("Turning Right Backward");
+      } else if (lower_left_trigger > deadband && lower_right_trigger < deadband && lower_yAxisLeft < -deadband) {
+        leftGroup.set(lower_left_trigger*babySpeed);
+        rightGroup.set(-lower_left_trigger_slowSpeed);
+        System.out.println("Turning Left Backward");
+      //turning while moving forward
+      } else if(lower_right_trigger > deadband && lower_left_trigger < deadband && lower_yAxisLeft > deadband) {
+        leftGroup.set(lower_right_trigger_slowSpeed);
+        rightGroup.set(-lower_right_trigger*babySpeed);
+        System.out.println("Turning Right Forward");
+      } else if (lower_left_trigger > deadband && lower_right_trigger < deadband && lower_yAxisLeft > deadband) {
+        leftGroup.set(-lower_left_trigger*babySpeed);
+        rightGroup.set(lower_left_trigger_slowSpeed);
+        System.out.println("Turning Left Forward");
+      //turning in spot
+      } else if (lower_right_trigger > deadband && lower_left_trigger < deadband) {
+        leftGroup.set(lower_right_trigger_slowSpeed);
+        rightGroup.set(-lower_right_trigger_slowSpeed);
+        System.out.println("Turning Right in spot");
+      } else if (lower_left_trigger > deadband && lower_right_trigger < deadband) {
+        leftGroup.set(-lower_left_trigger_slowSpeed);
+        rightGroup.set(lower_left_trigger_slowSpeed);
+        System.out.println("Turning Left in spot");
+      } else {
+
+        //forward moving (slowSpeed)
+        if(lower_yAxisLeft > deadband || lower_yAxisLeft < -deadband) {
+          leftGroup.set(lower_yAxisLeft_slowSpeed);
+          rightGroup.set(lower_yAxisLeft_slowSpeed);
+          System.out.println("Forward/Backward");
+        } else {}
+      }
+    }
+  }
+
+  public void MoveUpper() {
+   
+  }
+
+  public void autonomousInit() {
+
+  }
+
+  public void autonomousPeriodic() {
+
+  }
+}
