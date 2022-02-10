@@ -1,0 +1,122 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot;
+
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+
+/**
+ * This is a demo program showing the use of the DifferentialDrive class, specifically it contains
+ * the code necessary to operate a robot with tank drive.
+ */
+public class Robot extends TimedRobot {
+
+  WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(3);
+  WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(4);
+  WPI_TalonSRX motorRight1 = new WPI_TalonSRX(5);
+  WPI_TalonSRX motorRight2 = new WPI_TalonSRX(6);
+  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(7);
+
+  MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
+  MotorControllerGroup rightGroup = new MotorControllerGroup(motorRight1, motorRight2);
+
+  Timer timer = new Timer();
+
+  double deadband = 0.1;
+  double slowSpeed = 0.3;
+
+  double xAxisLeft = 0;
+  double yAxisLeft = 0;
+  double xAxisRight = 0;
+  double yAxisRight = 0;
+
+  boolean y_button = false;
+  boolean x_button = false;
+  boolean a_button = false;
+  boolean b_button = false;
+
+  double rightTrigger = 0;
+  double leftTrigger = 0;
+
+  Joystick controller = new Joystick(0);
+
+  @Override
+  public void robotInit() {
+    // We need to invert one side of the drivetrain so that positive voltages
+    // result in both sides moving forward. Depending on how your robot's
+    // gearbox is constructed, you might have to invert the left side instead.
+   
+    leftGroup.setInverted(true);
+    
+    timer.reset();
+    timer.start();
+
+  }
+
+  @Override
+  public void teleopPeriodic() {
+
+    
+    x_button = controller.getRawButton(3);
+    y_button = controller.getRawButton(4);
+    b_button = controller.getRawButton(2);
+    a_button = controller.getRawButton(1);
+
+    xAxisLeft = controller.getRawAxis(0);
+    yAxisLeft = controller.getRawAxis(1);
+    xAxisRight = controller.getRawAxis(4);
+    yAxisRight = controller.getRawAxis(5);
+
+    leftTrigger = controller.getRawAxis(2);
+    rightTrigger = controller.getRawAxis(3);
+
+    //deadband code
+    if(!a_button && !b_button && !x_button && !y_button && yAxisLeft <= deadband && yAxisLeft >= -deadband && 
+    leftTrigger <= deadband && rightTrigger <= deadband) { 
+       leftGroup.set(0);
+      rightGroup.set(0);
+      System.out.println("stopped");
+    } else {
+      // turning right
+      if (rightTrigger > deadband){
+        leftGroup.set(rightTrigger*slowSpeed);
+        rightGroup.set(-rightTrigger*slowSpeed);
+        System.out.println("turning right");
+      } // turning left
+      else if (leftTrigger > deadband){
+        leftGroup.set(-leftTrigger*slowSpeed);
+        rightGroup.set(leftTrigger*slowSpeed);
+        System.out.println("turning left");
+      }
+      //forwards and backwards with the joystick
+      else if (yAxisLeft > deadband || yAxisLeft < -deadband){
+        leftGroup.set(-yAxisLeft*slowSpeed);
+        rightGroup.set(-yAxisLeft*slowSpeed);
+        System.out.println("moving");
+      } else {}
+
+    }
+    //forwards and backwards with the Y and A buttons
+    /*
+    if (x_Ybutton){
+      leftGroup.set(slowSpeed);
+      rightGroup.set(slowSpeed);
+      System.out.println("Forwards");
+    } else if (x_Abutton){
+      leftGroup.set(-slowSpeed);
+      rightGroup.set(-slowSpeed);
+      System.out.println("Backwards");
+    } else { 
+      leftGroup.set(0);
+      rightGroup.set(0);
+      System.out.println("nothing");
+    }
+    */
+  }
+}
