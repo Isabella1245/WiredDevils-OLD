@@ -74,6 +74,8 @@ public class Robot extends TimedRobot {
   double diffAngle = 0.0f;
   boolean angleIsBad = true;
 
+  boolean actuatorBoolean = false;
+
   static final double kP= 0.009;
   static final double kI= 0.00;
   static final double kD= 0.00;
@@ -114,6 +116,7 @@ public class Robot extends TimedRobot {
     leftGroup.setInverted(true);
     //motorLeft1.setInverted(true);
     //motorLeft2.setInverted(true);
+
   }
 
   @Override
@@ -191,13 +194,6 @@ public class Robot extends TimedRobot {
       timer.start();
     } else {}
 
-    //Baby Actuator Code    
-    if(x_xAxisLeft > deadband || x_xAxisLeft < -deadband) {
-      actuator.set(x_xAxisLeft);
-    } else {
-      actuator.set(0.0);
-    }
-
     //Killswitch logic
     if(dead) {
       if(timer.get() < 0.1) {
@@ -212,6 +208,21 @@ public class Robot extends TimedRobot {
       motorLeft2.set(0);
       }
     } else {
+
+    //Baby Actuator Code    
+    if(x_Abutton && !actuatorBoolean) {
+      actuatorBoolean = true;
+    } else {}
+
+    if(actuatorBoolean) {
+      actuator.set(1);
+    } else {
+      actuator.set(-1);
+    }
+
+    if(x_Ybutton && actuatorBoolean) {
+      actuatorBoolean = false;
+    } else {}
 
     //Hyperspeed
     if(x_right_bumper && x_left_bumper) {
@@ -430,16 +441,6 @@ public class Robot extends TimedRobot {
     } else if(x_xAxisRight == 0) {
       servo1.setPosition(0.5);
     } 
-
-    /* if(x_Ybutton && servoAngle == false && timer.get() > 0.2) {
-      servo1.setAngle(135);
-      servoAngle = true;
-      timer.reset();
-    } else if(x_Ybutton && servoAngle == true && timer.get() > 0.2) {
-      servo1.setAngle(90);
-      servoAngle = false;
-      timer.reset();
-    } */
     
   }
 }
