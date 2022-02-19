@@ -10,12 +10,43 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX; //Talon Motor import
 
 import com.kauailabs.navx.frc.AHRS; //Gyro import
 
+/*
+[Lower Controller]
+Left Joystick: Forward/Backward Movement
+Right Joystick:
+A Button:
+B Button:
+X Button:
+Y Button:
+Left Trigger: Turning Left
+Right Trigger: Turning Right
+Left & Right Bumper:
+Back Button:
+Start Button:
+
+[Upper Controller]
+Left Joystick:
+Right Joystick:
+A Button:
+B Button:
+X Button:
+Y Button:
+Left Trigger:
+Right Trigger:
+Left & Right Bumper: Activates Manual Mast mode
+Back Button:
+Start Button: Enables/Disables Automatic Mast Extensions
+*/
+
 public class Robot extends TimedRobot {
 
   WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(0);
   WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(1);
   WPI_TalonSRX motorRight1 = new WPI_TalonSRX(14);
   WPI_TalonSRX motorRight2 = new WPI_TalonSRX(15);
+
+  WPI_TalonSRX mast1 = new WPI_TalonSRX(2);
+  WPI_TalonSRX mast2 = new WPI_TalonSRX(3);
 
   MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
   MotorControllerGroup rightGroup = new MotorControllerGroup(motorRight1, motorRight2);
@@ -51,17 +82,25 @@ public class Robot extends TimedRobot {
     double upper_right_trigger_slowSpeed, upper_left_trigger_slowSpeed;
   //
   
+  //Speeds
   double deadband = 0.05;
   double slowSpeed = 0.4;
   double babySpeed = slowSpeed / 2;
 
-  Timer timer = new Timer();
+  //Booleans
+  boolean mastEnabled = false;
+  boolean manualMast = false;
+  int movement = 0;
 
+  //Stating
+  Timer timer = new Timer();
   AHRS gyro = new AHRS(SPI.Port.kMXP);
 
   @Override
   public void robotInit() {
     leftGroup.setInverted(true);
+    timer.reset();
+    timer.start();
   }
 
   @Override
@@ -138,7 +177,7 @@ public class Robot extends TimedRobot {
       && (!lower_right_bumper && !lower_left_bumper)
       && (!lower_back_button && !lower_start_button)
       )
-    {rightGroup.set(0); leftGroup.set(0); System.out.println("Stopped");} else {
+    {rightGroup.set(0); leftGroup.set(0); System.out.println("Lower Stopped");} else {
       
       //turning while moving backward
       if((lower_right_trigger > deadband && lower_left_trigger < deadband) && lower_yAxisLeft < -deadband) {
@@ -181,6 +220,66 @@ public class Robot extends TimedRobot {
 
   public void MoveUpper() {
    
+    //Backend else
+    if(
+      (upper_yAxisLeft < deadband && upper_yAxisLeft > -deadband)
+      && (upper_yAxisRight < deadband && upper_yAxisRight > -deadband)
+      && (upper_xAxisLeft < deadband && upper_xAxisLeft > -deadband)
+      && (upper_xAxisRight < deadband && upper_xAxisRight > -deadband)
+      && (upper_left_trigger < deadband && upper_right_trigger < deadband)
+      && (!upper_Abutton && !upper_Bbutton && !upper_Xbutton && !upper_Ybutton)
+      && (upper_pov == -1)
+      && (!upper_right_bumper && !upper_left_bumper)
+      && (!upper_back_button && !upper_start_button)
+      )
+    {mast1.set(0); mast2.set(0); System.out.println("Upper Stopped");} else {
+
+      //Toggle for enabling automatic mast buttons
+      if(upper_start_button && !mastEnabled && timer.get() > 0.3) {
+        mastEnabled = true;
+        timer.reset();
+      } else if(upper_start_button && mastEnabled && timer.get() > 0.3) {
+        mastEnabled = false;
+        timer.reset();
+      } else {}
+
+
+
+      //automatic mast
+      if(mastEnabled) {
+        
+        //toggle for mast to next bar
+        if(upper_Abutton && movement == 0) {
+          movement = 1;
+        } else {}
+
+        //movement 1
+        if(movement == 1) {
+
+        }
+      } else {}
+
+      //Toggle for enabling manual mast mode
+      if(upper_left_bumper && upper_right_bumper && !manualMast && timer.get() > 0.3) {
+        manualMast = true;
+        mastEnabled = false;
+        timer.reset();
+      } else if(upper_left_bumper && upper_right_bumper && manualMast && timer.get() > 0.3) {
+        manualMast = false;
+        mastEnabled = false;
+        timer.reset();
+      } else {}
+
+      if(manualMast) {
+        //mast extension controls
+        if(upper_yAxisLeft > deadband || upper_yAxisLeft < -deadband) {
+
+        //mast rotation controls
+        } else if(upper_xAxisRight > deadband || upper_xAxisRight < -deadband) {
+
+        } else{}
+      }
+    }
   }
 
   public void autonomousInit() {
@@ -191,4 +290,3 @@ public class Robot extends TimedRobot {
 
   }
 }
-
