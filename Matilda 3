@@ -21,7 +21,9 @@ public class Robot extends TimedRobot {
   WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(4);
   WPI_TalonSRX motorRight1 = new WPI_TalonSRX(5);
   WPI_TalonSRX motorRight2 = new WPI_TalonSRX(6);
-  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(7);
+  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(0);
+  WPI_TalonSRX motorLinear2 = new WPI_TalonSRX(15);
+  WPI_TalonSRX motorDelivery = new WPI_TalonSRX(7);
 
   Servo servo1 = new Servo(1);
 
@@ -34,8 +36,10 @@ public class Robot extends TimedRobot {
   double toplimit = 3300;
   
   AnalogPotentiometer pot = new AnalogPotentiometer(0,3600,30);
+  AnalogPotentiometer potNew = new AnalogPotentiometer(1,3600,30);
 
-  PWMMotorController actuator = new PWMMotorController("actuator", 0) {};
+  PWMMotorController actuator = new PWMMotorController("actuator",2){};
+  PWMMotorController actuator2 = new PWMMotorController("actuator2",3){};
   
   Joystick xboxController = new Joystick(0);
 
@@ -209,25 +213,36 @@ public class Robot extends TimedRobot {
       }
     } else {
 
-    //Baby Actuator Code    
+    /*//Baby Actuator Code    
     if(x_Abutton && !actuatorBoolean) {
       actuatorBoolean = true;
     } else {}
 
     if(actuatorBoolean) {
+      actuator.set(0.6);
+      actuator2.set(0.6);
+    } else { 
       actuator.set(1);
-    } else {
-      actuator.set(-1);
+      actuator2.set(1);
     }
-
+*/
     if(x_Ybutton && actuatorBoolean) {
       actuatorBoolean = false;
     } else {}
 
+    if(x_xAxisLeft > deadband || x_xAxisLeft < -deadband){
+        actuator.set(x_xAxisLeft);
+        actuator2.set(x_xAxisLeft);
+    } else {
+      actuator.set(1);
+      actuator2.set(1);
+    }
+
+
     //Hyperspeed
     if(x_right_bumper && x_left_bumper) {
       hyperSpeed = true;
-    } else {
+    } else { 
       hyperSpeed = false;
     }
 
@@ -349,15 +364,26 @@ public class Robot extends TimedRobot {
 
     //linear1 control
     if (x_yAxisRight>= -deadband){
-      motorLinear1.set(x_yAxisRight*(slowSpeed));
+      motorLinear1.set(0.25*x_yAxisRight);
+      motorLinear2.set(-0.25*x_yAxisRight);
     }
     else if (x_yAxisRight<=deadband){
-      motorLinear1.set(x_yAxisRight*(slowSpeed));
+      motorLinear1.set(0.25*x_yAxisRight);
+      motorLinear2.set(-0.25*x_yAxisRight);
     }
     else if (x_yAxisRight <= deadband || x_yAxisRight >= -deadband){
       motorLinear1.set(0);
+      motorLinear2.set(0);
     }
     else {}
+
+    if(x_pov == 0) {
+      motorDelivery.set(-1);
+    } else if(x_pov == 180){
+      motorDelivery.set(-0.2);
+    } else {
+      motorDelivery.set(0);
+    }
 
     //PID auto move 90 degrees
     if((x_pov == 90) && turn90Auto == false) {
@@ -434,14 +460,14 @@ public class Robot extends TimedRobot {
     }
 
     //servo
-    if(x_xAxisRight > 0) {
+   /* if(x_xAxisRight > 0) {
       servo1.setPosition((x_xAxisRight/2) + 0.5);
     } else if(x_xAxisRight < 0) {
       servo1.setPosition((x_xAxisRight/2) + 0.5);
     } else if(x_xAxisRight == 0) {
       servo1.setPosition(0.5);
     } 
-    
+    */
   }
 }
   @Override
