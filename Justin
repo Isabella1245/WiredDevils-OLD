@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX; //Talon Motor import
 
@@ -25,16 +26,16 @@ Back Button:
 Start Button:
 
 [Upper Controller]
-Left Joystick:
-Right Joystick:
+Left Joystick: Mast Extension
+Right Joystick: Mast Angle
 A Button:
 B Button:
 X Button:
 Y Button:
-Left Trigger:
-Right Trigger:
+Left Trigger: Delivery Backward
+Right Trigger: Delivery Forward
 Left & Right Bumper: Activates Manual Mast mode
-Back Button:
+Back Button: Enables auto-brake in climbing
 Start Button: Enables/Disables Automatic Mast Extensions
 */
 
@@ -46,13 +47,17 @@ public class Robot extends TimedRobot {
   WPI_TalonSRX motorRight2 = new WPI_TalonSRX(15);
 
   WPI_TalonSRX mast1 = new WPI_TalonSRX(2);
-  WPI_TalonSRX mast2 = new WPI_TalonSRX(3);
+  WPI_TalonSRX mast2 = new WPI_TalonSRX(13);
+
+  WPI_TalonSRX delivery = new WPI_TalonSRX(12);
 
   MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
   MotorControllerGroup rightGroup = new MotorControllerGroup(motorRight1, motorRight2);
 
   Joystick lower_xboxController = new Joystick(0);
   Joystick upper_xboxController = new Joystick(1);
+
+  AnalogPotentiometer potMast = new AnalogPotentiometer(3, 3600, -100);
 
   //Controller Buttons
     double lower_left_trigger, lower_right_trigger;
@@ -84,13 +89,14 @@ public class Robot extends TimedRobot {
   
   //Speeds
   double deadband = 0.05;
-  double slowSpeed = 0.4;
+  double slowSpeed = 0.3;
   double babySpeed = slowSpeed / 2;
 
   //Booleans
   boolean mastEnabled = false;
   boolean manualMast = false;
   int movement = 0;
+  boolean isClimbing = false;
 
   //Stating
   Timer timer = new Timer();
@@ -106,6 +112,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     ReadJoystick();
+    ReadSensors();
     Calculations();
     MoveLower();
     MoveUpper();
@@ -163,6 +170,11 @@ public class Robot extends TimedRobot {
     upper_left_trigger_slowSpeed = upper_left_trigger * slowSpeed;
   }
 
+  public void ReadSensors() {
+    System.out.println("potMast: " + potMast.get());
+    System.out.println("mast: " + mast1.get());
+  }
+
   public void MoveLower() {
 
     //Backend else
@@ -177,7 +189,8 @@ public class Robot extends TimedRobot {
       && (!lower_right_bumper && !lower_left_bumper)
       && (!lower_back_button && !lower_start_button)
       )
-    {rightGroup.set(0); leftGroup.set(0); System.out.println("Lower Stopped");} else {
+    {rightGroup.set(0); leftGroup.set(0); //System.out.println("Lower Stopped");
+  } else {
       
       //turning while moving backward
       if((lower_right_trigger > deadband && lower_left_trigger < deadband) && lower_yAxisLeft < -deadband) {
@@ -231,19 +244,40 @@ public class Robot extends TimedRobot {
       && (upper_pov == -1)
       && (!upper_right_bumper && !upper_left_bumper)
       && (!upper_back_button && !upper_start_button)
+      && !isClimbing
       )
-    {mast1.set(0); mast2.set(0); System.out.println("Upper Stopped");} else {
+    {mast1.set(0); mast2.set(0); delivery.set(0); //System.out.println("Upper Stopped");
+  } else if(
+    (upper_yAxisLeft < deadband && upper_yAxisLeft > -deadband)
+    && (upper_yAxisRight < deadband && upper_yAxisRight > -deadband)
+    && (upper_xAxisLeft < deadband && upper_xAxisLeft > -deadband)
+    && (upper_xAxisRight < deadband && upper_xAxisRight > -deadband)
+    && (upper_left_trigger < deadband && upper_right_trigger < deadband)
+    && (!upper_Abutton && !upper_Bbutton && !upper_Xbutton && !upper_Ybutton)
+    && (upper_pov == -1)
+    && (!upper_right_bumper && !upper_left_bumper)
+    && (!upper_back_button && !upper_start_button)
+    && isClimbing
+    ) {
+     mast1.set(0.1); mast2.set(-0.1); delivery.set(0);
+  } else {
 
+      if(upper_right_trigger > 0) {
+        delivery.set(-upper_right_trigger);
+      } else if(upper_left_trigger > 0) {
+        delivery.set(upper_left_trigger);
+      } else {}
+    
       //Toggle for enabling automatic mast buttons
       if(upper_start_button && !mastEnabled && timer.get() > 0.3) {
         mastEnabled = true;
+        manualMast = false;
         timer.reset();
       } else if(upper_start_button && mastEnabled && timer.get() > 0.3) {
         mastEnabled = false;
+        manualMast = false;
         timer.reset();
       } else {}
-
-
 
       //automatic mast
       if(mastEnabled) {
@@ -264,20 +298,56 @@ public class Robot extends TimedRobot {
         manualMast = true;
         mastEnabled = false;
         timer.reset();
+        System.out.println("Manual Mast Enabled");
       } else if(upper_left_bumper && upper_right_bumper && manualMast && timer.get() > 0.3) {
         manualMast = false;
         mastEnabled = false;
         timer.reset();
+        System.out.println("Manual Mast Disabled");
       } else {}
 
       if(manualMast) {
         //mast extension controls
-        if(upper_yAxisLeft > deadband || upper_yAxisLeft < -deadband) {
+        if(potMast.get() > 35200 && (upper_yAxisLeft < deadband && upper_yAxisLeft > -deadband)) {
+          mast1.set(0.3);
+          mast2.set(-0.3);
+          System.out.println("Auto Retract");
+        } else if(potMast.get() < -10000 && (upper_yAxisLeft < deadband && upper_yAxisLeft > -deadband)) {
+          mast1.set(-0.3);
+          mast2.set(0.3);
+          System.out.println("Auto Extend");
+        } else if(potMast.get() < -10000 && (upper_yAxisLeft > deadband || upper_yAxisLeft < -deadband)) {
+          mast1.set(0);
+          mast2.set(0);
+          System.out.println("Reached Minimum");
+        } else if(potMast.get() > 35200 && (upper_yAxisLeft > deadband || upper_yAxisLeft < -deadband)) {
+          mast1.set(0);
+          mast2.set(0);
+          System.out.println("Reached Maximum");
+        } else if(upper_yAxisLeft < 0){
+          mast1.set(-upper_yAxisLeft/2);
+          mast2.set(upper_yAxisLeft/2);
+          System.out.println("Retracting Mast");
+        } else if(upper_yAxisLeft < 0 && isClimbing) {
+          mast1.set((-upper_yAxisLeft/2) + 0.1);
+          mast2.set((upper_yAxisLeft/2) - 0.1);
+          System.out.println("Retracting Mast");
+        } else if(upper_yAxisLeft > deadband) {
+          mast1.set(-upper_yAxisLeft/2);
+          mast2.set(upper_yAxisLeft/2);
+          System.out.println("Extending Mast");
+        } else {}
+
+        if(upper_back_button && timer.get() > 0.5 && !isClimbing) {
+          isClimbing = true;
+          timer.reset();
+        } else if(upper_back_button && timer.get() > 0.5 && isClimbing) {
+          isClimbing = false;
+          timer.reset();
+        } else {}
 
         //mast rotation controls
-        } else if(upper_xAxisRight > deadband || upper_xAxisRight < -deadband) {
-
-        } else{}
+        
       }
     }
   }
