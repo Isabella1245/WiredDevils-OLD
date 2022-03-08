@@ -49,6 +49,9 @@ public class Robot extends TimedRobot {
   WPI_TalonSRX mast1 = new WPI_TalonSRX(2);
   WPI_TalonSRX mast2 = new WPI_TalonSRX(13);
 
+  WPI_TalonSRX mastAngle1 = new WPI_TalonSRX(3);
+  WPI_TalonSRX mastAngle2 = new WPI_TalonSRX(11);
+
   WPI_TalonSRX delivery = new WPI_TalonSRX(12);
 
   MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
@@ -58,6 +61,7 @@ public class Robot extends TimedRobot {
   Joystick upper_xboxController = new Joystick(1);
 
   AnalogPotentiometer potMast = new AnalogPotentiometer(3, 3600, -100);
+  AnalogPotentiometer potAngle = new AnalogPotentiometer(2, 3600, -100);
 
   //Controller Buttons
     double lower_left_trigger, lower_right_trigger;
@@ -92,11 +96,22 @@ public class Robot extends TimedRobot {
   double slowSpeed = 0.3;
   double babySpeed = slowSpeed / 2;
 
+  //Logic
+  int movement = 0;
+  double filler = 0.0;
+  double motorInput = 0.0f;
+  double distToValue = 0.0f;
+  double desiredValue = 0;
+
   //Booleans
   boolean mastEnabled = false;
   boolean manualMast = false;
-  int movement = 0;
   boolean isClimbing = false;
+  boolean isClimbingAuto = false;
+  boolean readingValues = true;
+  boolean isExtending = false;
+  boolean isGoing = false;
+  boolean pidOn = false;
 
   //Stating
   Timer timer = new Timer();
@@ -168,11 +183,17 @@ public class Robot extends TimedRobot {
     upper_xAxisRight_slowSpeed = upper_xAxisRight * slowSpeed;
     upper_right_trigger_slowSpeed = upper_right_trigger * slowSpeed;
     upper_left_trigger_slowSpeed = upper_left_trigger * slowSpeed;
+
+    if(pidOn) {
+      
+    }
   }
 
   public void ReadSensors() {
-    System.out.println("potMast: " + potMast.get());
-    System.out.println("mast: " + mast1.get());
+    if(readingValues) {
+      System.out.println("potMast: " + potMast.get());
+      System.out.println("mast: " + mast1.get());
+    } else {}
   }
 
   public void MoveLower() {
@@ -282,15 +303,84 @@ public class Robot extends TimedRobot {
       //automatic mast
       if(mastEnabled) {
         
-        //toggle for mast to next bar
-        if(upper_Abutton && movement == 0) {
+        
+
+        //toggle for mast extension
+        if(upper_Abutton && movement == 0 && !isExtending) { 
+          isExtending = true;
+        } else {}
+        //mast extension
+        if(isExtending && potMast.get() < filler) {
+          mast1.set(filler);
+          mast2.set(filler);
+          System.out.println("Extending Mast...");
+        } else if(isExtending) {
+          mast1.set(0);
+          mast2.set(0);
           movement = 1;
+          isExtending = false;
+          System.out.println("Ready for next input");
         } else {}
 
-        //movement 1
-        if(movement == 1) {
+        //Climbing to first bar toggle
+        if(upper_Xbutton && movement == 1 && !isClimbingAuto) {
+          isClimbingAuto = true;
+        } else {}
 
+        //Climbing to first bar
+        if(isClimbingAuto && potMast.get() > filler) {
+          mast1.set(-filler);
+          mast2.set(-filler);
+          System.out.println("Climbing to first bar...");
+        } else if(isClimbingAuto) {
+          mast1.set(0);
+          mast2.set(0);
+          movement = 2;
+          isClimbingAuto = false;
+          System.out.println("Ready for next input");
+        } else {}
+
+        //Climbing to next bar toggle
+        if(upper_Ybutton && movement == 2 && !isGoing) {
+          isGoing = true;
+        } else {}
+
+        //Climbing to next bar
+        if(isGoing && potMast.get() < filler && movement == 2) {
+          mast1.set(filler);
+          mast2.set(filler);
+          System.out.println("Climbing to next bar (1/7)");
+        } else if(isGoing && potAngle.get() < filler && movement == 2) {
+          mastAngle1.set(filler);
+          mastAngle2.set(filler);
+          System.out.println("Climbing to next bar (2/7)");
+        } else if (isGoing && potMast.get() < filler && movement == 2) {
+          mast1.set(filler);
+          mast2.set(filler);
+          movement = 3;
+          System.out.println("Climbing to next bar (3/7)");
+        } else if(isGoing && potAngle.get() > filler && movement == 3) {
+          mastAngle1.set(-filler);
+          mastAngle2.set(-filler);
+          System.out.println("Climbing to next bar (4/7)");
+        } else if(isGoing && potMast.get() > filler && movement == 3) {
+          mast1.set(-filler);
+          mast2.set(-filler); //Retract just until gotten off bar
+          System.out.println("Climbing to next bar (5/7)");
+        } else if(isGoing && potAngle.get() > filler && movement == 3) {
+          mastAngle1.set(-filler);
+          mastAngle2.set(-filler);
+          System.out.println("Climbing to next bar (6/7)");
+        } else if(isGoing && potMast.get() > filler && movement == 3) {
+          mast1.set(-filler);
+          mast2.set(-filler);
+          System.out.println("Climbing to next bar (7/7)");
+        } else {
+          movement = 2;
+          isGoing = false;
+          System.out.println("--Ready for next input--");
         }
+
       } else {}
 
       //Toggle for enabling manual mast mode
@@ -353,10 +443,12 @@ public class Robot extends TimedRobot {
   }
 
   public void autonomousInit() {
-
+    timer.reset();
+    timer.start();
   }
 
   public void autonomousPeriodic() {
-
+    
   }
 }
+
