@@ -2,6 +2,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
@@ -60,8 +61,10 @@ public class Robot extends TimedRobot {
   Joystick lower_xboxController = new Joystick(0);
   Joystick upper_xboxController = new Joystick(1);
 
-  AnalogPotentiometer potMast = new AnalogPotentiometer(3, 3600, -100);
-  AnalogPotentiometer potAngle = new AnalogPotentiometer(2, 3600, -100);
+  AnalogPotentiometer potMast = new AnalogPotentiometer(0, 3600, -100);
+  AnalogPotentiometer potAngle = new AnalogPotentiometer(1, 3600, -100);
+
+  Servo intakeRelease = new Servo(0);
 
   //Controller Buttons
     double lower_left_trigger, lower_right_trigger;
@@ -192,7 +195,9 @@ public class Robot extends TimedRobot {
   public void ReadSensors() {
     if(readingValues) {
       System.out.println("potMast: " + potMast.get());
-      System.out.println("mast: " + mast1.get());
+      //System.out.println("mast: " + mast1.get());
+      System.out.println("potAngle: " + potAngle.get());
+      System.out.println("mastAngle: " + mastAngle1.get());
     } else {}
   }
 
@@ -267,7 +272,7 @@ public class Robot extends TimedRobot {
       && (!upper_back_button && !upper_start_button)
       && !isClimbing
       )
-    {mast1.set(0); mast2.set(0); delivery.set(0); //System.out.println("Upper Stopped");
+    {mast1.set(0); mast2.set(0); mastAngle1.set(0); mastAngle2.set(0); delivery.set(0); //System.out.println("Upper Stopped");
   } else if(
     (upper_yAxisLeft < deadband && upper_yAxisLeft > -deadband)
     && (upper_yAxisRight < deadband && upper_yAxisRight > -deadband)
@@ -280,7 +285,7 @@ public class Robot extends TimedRobot {
     && (!upper_back_button && !upper_start_button)
     && isClimbing
     ) {
-     mast1.set(0.1); mast2.set(-0.1); delivery.set(0);
+     mast1.set(0.1); mast2.set(-0.1); mastAngle1.set(0); mastAngle2.set(0); delivery.set(0);
   } else {
 
       if(upper_right_trigger > 0) {
@@ -303,8 +308,6 @@ public class Robot extends TimedRobot {
       //automatic mast
       if(mastEnabled) {
         
-        
-
         //toggle for mast extension
         if(upper_Abutton && movement == 0 && !isExtending) { 
           isExtending = true;
@@ -437,7 +440,16 @@ public class Robot extends TimedRobot {
         } else {}
 
         //mast rotation controls
-        
+        if(upper_xAxisRight > 0.01) {
+          mastAngle1.set(-((upper_xAxisRight/15) + 0.15));
+          mastAngle2.set(-((upper_xAxisRight/15) + 0.15));
+          System.out.println("Turning Angle Right");
+        } else if(upper_xAxisRight < -0.01) {
+          mastAngle1.set(-((upper_xAxisRight/15) - 0.15));
+          mastAngle2.set(-((upper_xAxisRight/15) - 0.15));
+          System.out.println("Turning Angle Left");
+        } else {}
+
       }
     }
   }
@@ -451,4 +463,3 @@ public class Robot extends TimedRobot {
     
   }
 }
-
