@@ -54,7 +54,7 @@ public class Robot extends TimedRobot {
   WPI_TalonSRX mastAngle2 = new WPI_TalonSRX(11);
 
   WPI_TalonSRX delivery = new WPI_TalonSRX(12);
-  WPI_TalonSRX pickup = new WPI_TalonSRX(3);
+  WPI_TalonSRX intake = new WPI_TalonSRX(3);
 
   MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
   MotorControllerGroup rightGroup = new MotorControllerGroup(motorRight1, motorRight2);
@@ -214,7 +214,7 @@ public class Robot extends TimedRobot {
     upper_right_trigger_hyperdrive = upper_right_trigger * hyperdrive;
     upper_left_trigger_hyperdrive = upper_left_trigger * hyperdrive;
 
-    potAngleDiff = potAngle1.get() - potAngle2.get() + 44;
+    potAngleDiff = potAngle1.get() - potAngle2.get();
   }
 
   public void ReadSensors() {
@@ -257,30 +257,30 @@ public class Robot extends TimedRobot {
  
       //turning while moving backward
       if((lower_right_trigger > deadband && lower_left_trigger < deadband) && lower_yAxisLeft < -deadband) {
-        leftGroup.set(lower_right_trigger_slowSpeed);
-        rightGroup.set(-lower_right_trigger*babySpeed);
+        leftGroup.set(lower_right_trigger_slowSpeed*1.5);
+        rightGroup.set(-lower_right_trigger_slowSpeed*1.5);
         System.out.println("Turning Right Backward");
       } else if (lower_left_trigger > deadband && lower_right_trigger < deadband && lower_yAxisLeft < -deadband) {
-        leftGroup.set(-lower_left_trigger*babySpeed);
-        rightGroup.set(lower_left_trigger_slowSpeed);
+        leftGroup.set(-lower_left_trigger_slowSpeed*1.5);
+        rightGroup.set(lower_left_trigger_slowSpeed*1.5);
         System.out.println("Turning Left Backward");
       //turning while moving forward
       } else if(lower_right_trigger > deadband && lower_left_trigger < deadband && lower_yAxisLeft > deadband) {
-        leftGroup.set(lower_right_trigger_slowSpeed);
-        rightGroup.set(-lower_right_trigger*babySpeed);
+        leftGroup.set(lower_right_trigger_slowSpeed*1.5);
+        rightGroup.set(-lower_right_trigger_slowSpeed*1.5);
         System.out.println("Turning Right Forward");
       } else if (lower_left_trigger > deadband && lower_right_trigger < deadband && lower_yAxisLeft > deadband) {
-        leftGroup.set(-lower_left_trigger*babySpeed);
-        rightGroup.set(lower_left_trigger_slowSpeed);
+        leftGroup.set(-lower_left_trigger_slowSpeed*1.5);
+        rightGroup.set(lower_left_trigger_slowSpeed*1.5);
         System.out.println("Turning Left Forward");
       //turning in spot
       } else if (lower_right_trigger > deadband && lower_left_trigger < deadband) {
-        leftGroup.set(lower_right_trigger_slowSpeed);
-        rightGroup.set(-lower_right_trigger_slowSpeed);
+        leftGroup.set(lower_right_trigger_slowSpeed*1.5);
+        rightGroup.set(-lower_right_trigger_slowSpeed*1.5);
         System.out.println("Turning Right in spot");
       } else if (lower_left_trigger > deadband && lower_right_trigger < deadband) {
-        leftGroup.set(-lower_left_trigger_slowSpeed);
-        rightGroup.set(lower_left_trigger_slowSpeed);
+        leftGroup.set(-lower_left_trigger_slowSpeed*1.5);
+        rightGroup.set(lower_left_trigger_slowSpeed*1.5);
         System.out.println("Turning Left in spot");
       } else {
 
@@ -314,7 +314,7 @@ public class Robot extends TimedRobot {
       && (!upper_back_button && !upper_start_button)
       && !isClimbing
       )
-    {mast1.set(0); mast2.set(0); mastAngle1.set(0); mastAngle2.set(0); delivery.set(0); pickup.set(0); //System.out.println("Upper Stopped");
+    {mast1.set(0); mast2.set(0); mastAngle1.set(0); mastAngle2.set(0); delivery.set(0); intake.set(0); //System.out.println("Upper Stopped");
   } else if(
     (upper_yAxisLeft < deadband && upper_yAxisLeft > -deadband)
     && (upper_yAxisRight < deadband && upper_yAxisRight > -deadband)
@@ -327,16 +327,22 @@ public class Robot extends TimedRobot {
     && (!upper_back_button && !upper_start_button)
     && isClimbing
     ) {
-     mast1.set(0.1); mast2.set(-0.1); mastAngle1.set(0); mastAngle2.set(0); delivery.set(0); pickup.set(0);
+     mast1.set(0.1); mast2.set(-0.1); mastAngle1.set(0); mastAngle2.set(0); delivery.set(0); intake.set(0);
   } else {
 
-      if(upper_right_trigger > 0) {
-        pickup.set(upper_right_trigger);
-      } else if(upper_left_trigger > 0) {
-        delivery.set(upper_left_trigger);
+      if(upper_Abutton) {
+        intake.set(1);
+      } else if(upper_Ybutton) {
+        intake.set(-1);
       } else {}
+      
+      if(upper_Bbutton) {
+        delivery.set(1);
+      } else if(upper_Xbutton) {
+        delivery.set(-1);
+      }
 
-     
+      /*
     
       //Toggle for enabling automatic mast buttons
       if(upper_start_button) {
@@ -433,19 +439,20 @@ public class Robot extends TimedRobot {
 
       } else {}
 
+      */
+
       //Toggle for enabling manual mast mode
       if(upper_right_bumper == true){
         manualMast = true;
         slowSpeed = 0.2;
         System.out.println("on");
-      } else if(upper_left_bumper == true) {
+      } else if(upper_right_bumper == true) {
         manualMast = false;
         slowSpeed = 0.3;
         System.out.println("off");
       }
 
       if(manualMast) {
-        System.out.println("manual mast enabled");
         
         //mast extension controls
          if(potMast.get() < 50 && (upper_yAxisLeft > deadband || upper_yAxisLeft < -deadband)) {
@@ -461,12 +468,12 @@ public class Robot extends TimedRobot {
           mast2.set(upper_yAxisLeft/2);
           System.out.println("Retracting Mast");
         } else if(upper_yAxisLeft < -deadband) {
-          mast1.set((-upper_yAxisLeft/2) + 0.1);
-          mast2.set((upper_yAxisLeft/2) - 0.1);
+          mast1.set((-upper_yAxisLeft*0.75) + 0.1);
+          mast2.set((upper_yAxisLeft*0.75) - 0.1);
           System.out.println("Retracting Mast");
         } else if(upper_yAxisLeft > deadband) {
-          mast1.set(-upper_yAxisLeft/2);
-          mast2.set(upper_yAxisLeft/2);
+          mast1.set(-upper_yAxisLeft*0.75);
+          mast2.set(upper_yAxisLeft*0.75);
           System.out.println("Extending Mast");
         } else {}
 
@@ -478,33 +485,62 @@ public class Robot extends TimedRobot {
           timer.reset();
         } else {} 
               //mast rotation controls
-              if(upper_yAxisRight > 0.01 && potAngleDiff > 20) {
-                mastAngle1.set(-((upper_yAxisRight/10)));
-                mastAngle2.set(-((upper_yAxisRight/10) + 0.2));
-                System.out.println("Turning Angle Forward ");
-              }else if(upper_yAxisRight > 0.01 && potAngleDiff < -20) {
-                mastAngle1.set(-((upper_yAxisRight/10) + 0.2));
-                mastAngle2.set(-((upper_yAxisRight/10)));
-                System.out.println("Turning Angle Forward ");
-              }else if(upper_yAxisRight < -0.01 && potAngleDiff < -20 && (potAngle1.get() > 150 || potAngle2.get() > 150)) {
-                mastAngle1.set(((upper_yAxisRight/10)));
-                mastAngle2.set(((upper_yAxisRight/10)+ 0.2));
-                System.out.println("Turning Angle Back");
-              }else if(upper_yAxisRight < -0.01 && potAngleDiff > 20 && (potAngle1.get() > 150 || potAngle2.get() > 150)) {
-                mastAngle1.set(((upper_yAxisRight/10) + 0.2));
-                mastAngle2.set(((upper_yAxisRight/10)));
-                System.out.println("Turning Angle Back");
-              }else if(upper_yAxisRight > 0.01 && potAngleDiff <20 && potAngleDiff > -100) {
-                mastAngle1.set(-((upper_yAxisRight/10) + 0.2));
-                mastAngle2.set(-((upper_yAxisRight/10) + 0.2));
-                System.out.println("Turning Angle Forward ");
-              } else if(upper_yAxisRight < -0.01&& potAngleDiff <20 && potAngleDiff > -100 && (potAngle1.get() > 150 || potAngle2.get() > 150)) {
-                mastAngle1.set(-((upper_yAxisRight/10) - 0.25));
-                mastAngle2.set(-((upper_yAxisRight/10) - 0.2));
-                System.out.println("Turning Angle Back");
-              } else {}
 
+              //forward adjust
+              if(upper_yAxisRight > 0.01 && potAngleDiff > 5 && (potAngle1.get() < 1000)) {
+                mastAngle1.set(-((upper_yAxisRight/3)));
+                mastAngle2.set(-((upper_yAxisRight/3) + 0.1));
+                System.out.println("Turning Angle Forward ");
+              //forward adjust
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff < -5 && (potAngle1.get() < 1000)) {
+                mastAngle1.set(-((upper_yAxisRight/3) + 0.1));
+                mastAngle2.set(-((upper_yAxisRight/3)));
+                System.out.println("Turning Angle Forward ");
+              //forward normal
+              } else if(upper_yAxisRight > 0.01 && (potAngleDiff < 5 && potAngleDiff > -5) && (potAngle1.get() < 1000)) {
+                mastAngle1.set(-((upper_yAxisRight/3)));
+                mastAngle2.set(-((upper_yAxisRight/3)));
+                System.out.println("Turning Angle Forward ");
+              //backward adjust
+              } else if(upper_yAxisRight < -0.01 && potAngleDiff < -5 && (potAngle1.get() > 150 && potAngle2.get() > 150)) {
+                mastAngle1.set(-((upper_yAxisRight/3) + 0.1));
+                mastAngle2.set(-((upper_yAxisRight/3)));
+                System.out.println("Turning Angle Back");
+              //backward adjust
+              } else if(upper_yAxisRight < -0.01 && potAngleDiff > 5 && (potAngle1.get() > 150 && potAngle2.get() > 150)) {
+                mastAngle1.set(-((upper_yAxisRight/3)));
+                mastAngle2.set(-((upper_yAxisRight/3) + 0.1));
+                System.out.println("Turning Angle Back");
+              //backward normal
+              } else if(upper_yAxisRight < -0.01 && potAngleDiff < 5 && potAngleDiff > -100 && (potAngle1.get() > 150 && potAngle2.get() > 150)) {
+                mastAngle1.set(-((upper_yAxisRight/3)));
+                mastAngle2.set(-((upper_yAxisRight/3)));
+                System.out.println("Turning Angle Back");
+              //forward slow adjust
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff > 5 && (potAngle1.get() < 1300 && potAngle1.get() > 1000)) {
+                mastAngle1.set(-((upper_yAxisRight/5)));
+                mastAngle2.set(-((upper_yAxisRight/5) + 0.1));
+                System.out.println("Turning Angle Forward slow");
+              //forward slow adjust
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff < -5 && (potAngle1.get() < 1300 && potAngle1.get() > 1000)) {
+                mastAngle1.set(-((upper_yAxisRight/5) + 0.1));
+                mastAngle2.set(-((upper_yAxisRight/5)));
+                System.out.println("Turning Angle Forward slow");
+              //forward slow
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff < 5 && potAngleDiff > -100 && (potAngle1.get() < 1300 && potAngle1.get() > 1000)) {
+                mastAngle1.set(-((upper_yAxisRight/5)));
+                mastAngle2.set(-((upper_yAxisRight/5)));
+                System.out.println("Turning Angle Forward slow ");
+              } else {
+                mastAngle1.set(0);
+                mastAngle2.set(0);
+                System.out.println("Stop");
+              }
 
+        if(upper_left_bumper) {
+          mast1.set(0.1);
+          mast2.set(-0.1);
+        } else {}
 
       }
     }
@@ -518,9 +554,23 @@ public class Robot extends TimedRobot {
   }
 
   public void autonomousPeriodic() {
-    /*
     
-    */
+    //instant deliver and out
+    
+    if(timer.get() < 1.4) {
+      delivery.set(1);
+    } else if(timer.get() >= 1.4 && timer.get() < 2.4) {
+      leftGroup.set(0.45);
+      rightGroup.set(0.45); 
+      delivery.set(0);
+    } else {
+      leftGroup.set(0);
+      rightGroup.set(0); 
+    }
+    
+    
+    //
+
   }
 }
 
