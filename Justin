@@ -463,19 +463,18 @@ public class Robot extends TimedRobot {
           mast1.set(0);
           mast2.set(0);
           System.out.println("Reached Maximum");
-        } else if(upper_yAxisLeft < 0){
-          mast1.set(-upper_yAxisLeft/2);
-          mast2.set(upper_yAxisLeft/2);
-          System.out.println("Retracting Mast");
-        } else if(upper_yAxisLeft < -deadband) {
-          mast1.set((-upper_yAxisLeft*0.75) + 0.1);
-          mast2.set((upper_yAxisLeft*0.75) - 0.1);
+        } else if(upper_yAxisLeft < -deadband){
+          mast1.set(-upper_yAxisLeft*0.6);
+          mast2.set(upper_yAxisLeft*0.6);
           System.out.println("Retracting Mast");
         } else if(upper_yAxisLeft > deadband) {
-          mast1.set(-upper_yAxisLeft*0.75);
-          mast2.set(upper_yAxisLeft*0.75);
+          mast1.set(-upper_yAxisLeft*0.6);
+          mast2.set(upper_yAxisLeft*0.6);
           System.out.println("Extending Mast");
-        } else {}
+        } else {
+          mast1.set(0);
+          mast2.set(0);
+        }
 
         if(upper_back_button && timer.get() > 0.5 && !isClimbing) {
           isClimbing = true;
@@ -487,17 +486,17 @@ public class Robot extends TimedRobot {
               //mast rotation controls
 
               //forward adjust
-              if(upper_yAxisRight > 0.01 && potAngleDiff > 5 && (potAngle1.get() < 1000)) {
+              if(upper_yAxisRight > 0.01 && potAngleDiff > 5 && (potAngle1.get() < 1100)) {
                 mastAngle1.set(-((upper_yAxisRight/3)));
                 mastAngle2.set(-((upper_yAxisRight/3) + 0.1));
                 System.out.println("Turning Angle Forward ");
               //forward adjust
-              } else if(upper_yAxisRight > 0.01 && potAngleDiff < -5 && (potAngle1.get() < 1000)) {
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff < -5 && (potAngle1.get() < 1100)) {
                 mastAngle1.set(-((upper_yAxisRight/3) + 0.1));
                 mastAngle2.set(-((upper_yAxisRight/3)));
                 System.out.println("Turning Angle Forward ");
               //forward normal
-              } else if(upper_yAxisRight > 0.01 && (potAngleDiff < 5 && potAngleDiff > -5) && (potAngle1.get() < 1000)) {
+              } else if(upper_yAxisRight > 0.01 && (potAngleDiff < 5 && potAngleDiff > -5) && (potAngle1.get() < 1100)) {
                 mastAngle1.set(-((upper_yAxisRight/3)));
                 mastAngle2.set(-((upper_yAxisRight/3)));
                 System.out.println("Turning Angle Forward ");
@@ -517,17 +516,17 @@ public class Robot extends TimedRobot {
                 mastAngle2.set(-((upper_yAxisRight/3)));
                 System.out.println("Turning Angle Back");
               //forward slow adjust
-              } else if(upper_yAxisRight > 0.01 && potAngleDiff > 5 && (potAngle1.get() < 1300 && potAngle1.get() > 1000)) {
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff > 5 && (potAngle1.get() < 1400 && potAngle1.get() > 1100)) {
                 mastAngle1.set(-((upper_yAxisRight/5)));
                 mastAngle2.set(-((upper_yAxisRight/5) + 0.1));
                 System.out.println("Turning Angle Forward slow");
               //forward slow adjust
-              } else if(upper_yAxisRight > 0.01 && potAngleDiff < -5 && (potAngle1.get() < 1300 && potAngle1.get() > 1000)) {
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff < -5 && (potAngle1.get() < 1400 && potAngle1.get() > 1100)) {
                 mastAngle1.set(-((upper_yAxisRight/5) + 0.1));
                 mastAngle2.set(-((upper_yAxisRight/5)));
                 System.out.println("Turning Angle Forward slow");
               //forward slow
-              } else if(upper_yAxisRight > 0.01 && potAngleDiff < 5 && potAngleDiff > -100 && (potAngle1.get() < 1300 && potAngle1.get() > 1000)) {
+              } else if(upper_yAxisRight > 0.01 && potAngleDiff < 5 && potAngleDiff > -100 && (potAngle1.get() < 1400 && potAngle1.get() > 1100)) {
                 mastAngle1.set(-((upper_yAxisRight/5)));
                 mastAngle2.set(-((upper_yAxisRight/5)));
                 System.out.println("Turning Angle Forward slow ");
@@ -559,7 +558,7 @@ public class Robot extends TimedRobot {
     
     if(timer.get() < 1.4) {
       delivery.set(1);
-    } else if(timer.get() >= 1.4 && timer.get() < 2.4) {
+    } else if(timer.get() >= 1.4 && timer.get() < 2.8) {
       leftGroup.set(0.45);
       rightGroup.set(0.45); 
       delivery.set(0);
@@ -573,4 +572,3 @@ public class Robot extends TimedRobot {
 
   }
 }
-
