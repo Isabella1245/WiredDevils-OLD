@@ -106,7 +106,7 @@ public class Robot extends TimedRobot {
   
   //Speeds
   double deadband = 0.05;
-  double slowSpeed = 0.3;
+  double slowSpeed = 0.5;
   double babySpeed = slowSpeed / 2;
   double hyperdrive = slowSpeed * 2;
 
@@ -572,3 +572,4 @@ public class Robot extends TimedRobot {
 
   }
 }
+
