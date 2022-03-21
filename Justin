@@ -106,9 +106,9 @@ public class Robot extends TimedRobot {
   
   //Speeds
   double deadband = 0.05;
-  double slowSpeed = 0.5;
-  double babySpeed = slowSpeed / 2;
-  double hyperdrive = slowSpeed * 2;
+  double normalSpeed = 0.6;
+  double babySpeed = normalSpeed / 2;
+  double hyperdrive = normalSpeed * 2;
 
   //Logic
   int movement = 0;
@@ -186,19 +186,19 @@ public class Robot extends TimedRobot {
   }
   
   public void Calculations() {
-    lower_yAxisLeft_slowSpeed = lower_yAxisLeft * slowSpeed;
-    lower_xAxisLeft_slowSpeed = lower_xAxisLeft * slowSpeed;
-    lower_yAxisRight_slowSpeed = lower_yAxisRight * slowSpeed;
-    lower_xAxisRight_slowSpeed = lower_xAxisRight * slowSpeed;
-    lower_right_trigger_slowSpeed = lower_right_trigger * slowSpeed;
-    lower_left_trigger_slowSpeed = lower_left_trigger * slowSpeed;
+    lower_yAxisLeft_slowSpeed = lower_yAxisLeft * normalSpeed;
+    lower_xAxisLeft_slowSpeed = lower_xAxisLeft * normalSpeed;
+    lower_yAxisRight_slowSpeed = lower_yAxisRight * normalSpeed;
+    lower_xAxisRight_slowSpeed = lower_xAxisRight * normalSpeed;
+    lower_right_trigger_slowSpeed = lower_right_trigger * normalSpeed;
+    lower_left_trigger_slowSpeed = lower_left_trigger * normalSpeed;
 
-    upper_yAxisLeft_slowSpeed = upper_yAxisLeft * slowSpeed;
-    upper_xAxisLeft_slowSpeed = upper_xAxisLeft * slowSpeed;
-    upper_yAxisRight_slowSpeed = upper_yAxisRight * slowSpeed;
-    upper_xAxisRight_slowSpeed = upper_xAxisRight * slowSpeed;
-    upper_right_trigger_slowSpeed = upper_right_trigger * slowSpeed;
-    upper_left_trigger_slowSpeed = upper_left_trigger * slowSpeed;
+    upper_yAxisLeft_slowSpeed = upper_yAxisLeft * normalSpeed;
+    upper_xAxisLeft_slowSpeed = upper_xAxisLeft * normalSpeed;
+    upper_yAxisRight_slowSpeed = upper_yAxisRight * normalSpeed;
+    upper_xAxisRight_slowSpeed = upper_xAxisRight * normalSpeed;
+    upper_right_trigger_slowSpeed = upper_right_trigger * normalSpeed;
+    upper_left_trigger_slowSpeed = upper_left_trigger * normalSpeed;
 
     lower_yAxisLeft_hyperdrive = lower_yAxisLeft * hyperdrive;
     lower_xAxisLeft_hyperdrive = lower_xAxisLeft * hyperdrive;
@@ -444,11 +444,11 @@ public class Robot extends TimedRobot {
       //Toggle for enabling manual mast mode
       if(upper_right_bumper == true){
         manualMast = true;
-        slowSpeed = 0.2;
+        normalSpeed = 0.3;
         System.out.println("on");
       } else if(upper_right_bumper == true) {
         manualMast = false;
-        slowSpeed = 0.3;
+        normalSpeed = 0.6;
         System.out.println("off");
       }
 
@@ -464,8 +464,8 @@ public class Robot extends TimedRobot {
           mast2.set(0);
           System.out.println("Reached Maximum");
         } else if(upper_yAxisLeft < -deadband){
-          mast1.set(-upper_yAxisLeft*0.6);
-          mast2.set(upper_yAxisLeft*0.6);
+          mast1.set(-upper_yAxisLeft);
+          mast2.set(upper_yAxisLeft);
           System.out.println("Retracting Mast");
         } else if(upper_yAxisLeft > deadband) {
           mast1.set(-upper_yAxisLeft*0.6);
