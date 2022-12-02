@@ -1,17 +1,18 @@
 package frc.robot;
 
+   //all the imports you will need for the robot
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 
+  //these imports are for the motors. The motors this robot uses are TalonSRX motors
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 
-/**
- * This is a demo program showing the use of the DifferentialDrive class, specifically it contains
- * the code necessary to operate a robot with tank drive.
- */
+
 public class Robot extends TimedRobot {
+
+ //inside this class, state the motors using the correct port already provided) and create a new timer.
 
   WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(3);
   WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(4);
@@ -24,9 +25,16 @@ public class Robot extends TimedRobot {
 
   Timer timer = new Timer();
 
+ //state any variables you need to use for speed, buttons, mast measurements, etc
+ 
+ //the deadband is a limit that we use, so that if someone does not bush a button enough it will not move the robot
   double deadband = 0.1;
+ //sets a value for a default slower speed
   double slowSpeed = 0.3;
 
+ //these are the buttons which will be used in the code. you must give them a starting value of 0/false because otherwise the 
+ //robot may start moving randomly when you start the code
+ // the motors run on % power, with 1 being 100% power, so the values read by the joystick will not be >1 or <-1 (in the case that robot moves backwards)
   double xAxisLeft = 0;
   double yAxisLeft = 0;
   double xAxisRight = 0;
@@ -37,33 +45,47 @@ public class Robot extends TimedRobot {
   boolean a_button = false;
   boolean b_button = false;
 
+ // the left and right triggers also run on % power, but they do not read any negative values.
   double rightTrigger = 0;
   double leftTrigger = 0;
 
+ //state a new joystick (this one is named "controller")
   Joystick controller = new Joystick(0);
 
+ //i'm not exactly sure what the @override does but it's needed
   @Override
+ 
+ //start a new class within the previous class. this is the initial robot class ("RobotInit")
   public void robotInit() {
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
+ 
+   // We need to invert one side of the drivetrain so that positive voltages
+   // result in both sides moving forward. Depending on how your robot's
+   // gearbox is constructed, you might have to invert the left side instead.
    
     leftGroup.setInverted(true);
     
+   //now is when you would reset the time you created and start it over
     timer.reset();
     timer.start();
 
   }
+  //end of the robotInit class
 
+ //start another class. this is going to be for the Teleoperated period of "competition". during this period, the robot is controlled by 
+ //humans and controllers. we write our code for all the buttons and things.
+ 
   @Override
   public void teleopPeriodic() {
 
-    
+   //here is where you give the doubles for each button a value. find which port corresponds to each button (in drivers station) and give it the correct value.
+   //Example: the X button is the 3rd port, meaning it is the 3rd button that lights up when you press them in order.
+   //the buttons can either function as a double (on an axis) or as a boolean (true or false)
     x_button = controller.getRawButton(3);
     y_button = controller.getRawButton(4);
     b_button = controller.getRawButton(2);
     a_button = controller.getRawButton(1);
 
+   //the buttons that are used as double values have their own port. each axis takes up its own port.
     xAxisLeft = controller.getRawAxis(0);
     yAxisLeft = controller.getRawAxis(1);
     xAxisRight = controller.getRawAxis(4);
@@ -72,25 +94,33 @@ public class Robot extends TimedRobot {
     leftTrigger = controller.getRawAxis(2);
     rightTrigger = controller.getRawAxis(3);
 
-    //deadband code
-    if(!a_button && !b_button && !x_button && !y_button && yAxisLeft <= deadband && yAxisLeft >= -deadband && 
-    leftTrigger <= deadband && rightTrigger <= deadband) { 
+    //deadband code, this code comes first so that it will override any other if statements
+    //if the joystick is moved, but the value does not read higher than 0.1, the robot will not move.
+    if(!a_button && !b_button && !x_button && !y_button && yAxisLeft <= deadband && yAxisLeft >= -deadband && leftTrigger <= deadband && rightTrigger <= deadband) { 
        leftGroup.set(0);
       rightGroup.set(0);
       System.out.println("stopped");
     } else {
-      // turning right
+    
+     // turning right
+     // if the right trigger is pressed and the value is larger than the deadband value (0.1) the robot will move at the percent power that the button reads.
+     // in this case, we are using the slowspeed by multiplying the value read by the controller to the slowspeed variable
+     // thats why the robot moves so slow when it turns
       if (rightTrigger > deadband){
         leftGroup.set(rightTrigger*slowSpeed);
         rightGroup.set(-rightTrigger*slowSpeed);
         System.out.println("turning right");
-      } // turning left
+      } 
+     // turning left
+     // if the left trigger is pressed and the value is larger than the deadband value (0.1) the robot will set to motor speed to the percent power that the joystick reads
       else if (leftTrigger > deadband){
         leftGroup.set(-leftTrigger*slowSpeed);
         rightGroup.set(leftTrigger*slowSpeed);
         System.out.println("turning left");
       }
-      //forwards and backwards with the joystick
+     //forwards and backwards with the joystick
+     // since the code for forwards and backwards comes AFTER the code for turning, the left and right triggers will always overpower the left and right axis
+     // if the left Y axis is moved up or down and the value is not within the deadband, it will set the motor speed to the value the joystick reads.
       else if (yAxisLeft > deadband || yAxisLeft < -deadband){
         leftGroup.set(-yAxisLeft*slowSpeed);
         rightGroup.set(-yAxisLeft*slowSpeed);
@@ -99,6 +129,9 @@ public class Robot extends TimedRobot {
 
     }
     //forwards and backwards with the Y and A buttons
+    // when I first started out writing the code, i wanted to use the Y and A buttons to move forwards and backwards. but since there are no percent values that
+    // can be read when you are pushing the button (true/false), you have to set it to a fixed speed, and I used the slowspeed.
+    // this does not need to be included.
     /*
     if (x_Ybutton){
       leftGroup.set(slowSpeed);
