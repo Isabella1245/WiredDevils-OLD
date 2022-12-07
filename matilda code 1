@@ -1,0 +1,57 @@
+//robot will only move forwards and backwards
+
+package frc.robot;
+
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+
+public class Robot extends TimedRobot {
+
+  WPI_TalonSRX motorLeft1 = new WPI_TalonSRX(3);
+  WPI_TalonSRX motorLeft2 = new WPI_TalonSRX(4);
+  WPI_TalonSRX motorRight1 = new WPI_TalonSRX(5);
+  WPI_TalonSRX motorRight2 = new WPI_TalonSRX(6);
+  WPI_TalonSRX motorLinear1 = new WPI_TalonSRX(7);
+
+  MotorControllerGroup leftGroup = new MotorControllerGroup(motorLeft1, motorLeft2);
+  MotorControllerGroup rightGroup = new MotorControllerGroup(motorRight1, motorRight2);
+
+  double deadband = 0.05;
+
+  double xAxisLeft = 0;
+  double yAxisLeft = 0;
+
+  Joystick controller = new Joystick(0);
+
+  @Override
+  public void robotInit() {
+
+    leftGroup.setInverted(true);
+  }
+
+   @Override
+  public void teleopPeriodic() {
+
+    xAxisLeft = controller.getRawAxis(0);
+    yAxisLeft = controller.getRawAxis(1);
+
+    if (yAxisLeft < deadband && yAxisLeft > -deadband ) {
+      leftGroup.set(0);
+      rightGroup.set(0);
+    } else {
+
+      if (yAxisLeft > deadband || yAxisLeft < -deadband) {
+        leftGroup.set(0.5);
+        rightGroup.set(0.5);
+      }
+
+    }
+
+
+
+  }
+}
