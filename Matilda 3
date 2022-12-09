@@ -1,3 +1,5 @@
+//THIS WAS NOT THE CODE WE USED IN COMPETITION LAST YEAR
+
 package frc.robot;
 
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
