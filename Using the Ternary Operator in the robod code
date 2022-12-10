@@ -1,0 +1,17 @@
+// the robot code is composed of mainly if statements.
+// these if statements can get long
+// the ternary operator can be applied in some cases, as a type of shortcut in replacement of an if statement.
+
+// Example: look at this if statement (assume all buttons and variables are already stated)
+
+if (yAxisLeft > deadband) {
+  leftGroup.set(0.3);
+  rightGroup.set(0.3);
+}
+
+// Now look at the same if statement, but instead I used a ternary operator
+
+leftGroup = (yAxisLeft > deadband) ? 0.3 : 0;
+rightGroup = (yAxisLeft > deadband) ? 0.3 : 0;
+  
+
