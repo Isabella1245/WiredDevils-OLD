@@ -1,0 +1,170 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot;
+
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
+import edu.wpi.first.wpilibj.Encoder;
+
+/**
+ * The VM is configured to automatically run this class, and to call the functions corresponding to
+ * each mode, as described in the TimedRobot documentation. If you change the name of this class or
+ * the package after creating this project, you must also update the manifest file in the resource
+ * directory.
+ */
+public class Robot extends TimedRobot {
+
+  private final Timer m_timer = new Timer();
+
+  //REAR MOTORS
+
+  WPI_TalonSRX motorLBDrive = new WPI_TalonSRX(8);
+  WPI_TalonSRX motorLBTurn = new WPI_TalonSRX(7);
+  WPI_TalonSRX motorRBDrive = new WPI_TalonSRX(6);
+  WPI_TalonSRX motorRBTurn = new WPI_TalonSRX(5);
+
+  //FRONT MOTORS
+
+  WPI_TalonSRX motorLFDrive = new WPI_TalonSRX(1);
+  WPI_TalonSRX motorLFTurn = new WPI_TalonSRX(2);
+  WPI_TalonSRX motorRFDrive = new WPI_TalonSRX(4);
+  WPI_TalonSRX motorRFTurn = new WPI_TalonSRX(3);
+
+  //Encoder encoder = new Encoder(0, 1)
+
+
+  double yAxisLeft = 0;
+  double xAxisRight = 0;
+
+  double deadband = 0.1;
+
+  Joystick xboxController = new Joystick(0);
+  
+  /**
+   * This function is run when the robot is first started up and should be used for any
+   * initialization code.
+   */
+  @Override
+  public void robotInit() {
+    // We need to invert one side of the drivetrain so that positive voltages
+    // result in both sides moving forward. Depending on how your robot's
+    // gearbox is constructed, you might have to invert the left side instead.
+  }
+
+  /** This function is run once each time the robot enters autonomous mode. */
+  @Override
+  public void autonomousInit() {
+    m_timer.reset();
+    m_timer.start();
+  }
+
+  /** This function is called periodically during autonomous. */
+  @Override
+  public void autonomousPeriodic() {
+    // Drive for 2 seconds
+    if (m_timer.get() < 2.0) {
+      // Drive forwards half speed, make sure to turn input squaring off
+     
+    } else {
+      
+    }
+  }
+
+  /** This function is called once each time the robot enters teleoperated mode. */
+  @Override
+  public void teleopInit() {
+
+  motorRFDrive.setInverted(true);
+  motorRBDrive.setInverted(true);
+  }
+
+  /** This function is called periodically during teleoperated mode. */
+  @Override
+  public void teleopPeriodic() {
+   ReadJoystick();
+    ReadSensors();
+    MoveRobot();
+  }
+
+ public void ReadJoystick(){
+ 
+  yAxisLeft = xboxController.getRawAxis(1);
+  xAxisRight = xboxController.getRawAxis(4);
+}
+
+  public void ReadSensors(){
+  }
+
+
+  public void MoveRobot(){ 
+  
+  //IMPORTANT
+  //in driver station, if you look at the controller's connection, the left axis seems to be 
+  //inverted for some reason
+
+  if (yAxisLeft < deadband && yAxisLeft > -deadband && xAxisRight < deadband && xAxisRight > -deadband) {
+    motorLBDrive.set(0);
+    motorRBDrive.set(0);
+    motorLFDrive.set(0);
+    motorRFDrive.set(0);
+    motorLBTurn.set(0);
+    motorRBTurn.set(0);
+    motorLFTurn.set(0);
+    motorRFTurn.set(0);
+  }
+
+
+  if (yAxisLeft > deadband ){
+    motorLBDrive.set(0.3);
+    motorRBDrive.set(0.3);
+    motorLFDrive.set(0.3);
+    motorRFDrive.set(0.3);
+  } else if (yAxisLeft < -deadband) {
+     motorLBDrive.set(-0.3);
+     motorRBDrive.set(-0.3);
+     motorLFDrive.set(-0.3);
+     motorRFDrive.set(-0.3);
+  } else {
+    motorLBDrive.set(0);
+    motorRBDrive.set(0);
+    motorLFDrive.set(0);
+    motorRFDrive.set(0);
+  }
+
+
+  if (xAxisRight > deadband) {
+    motorLBTurn.set(0.15);
+    motorRBTurn.set(0.15);
+    motorLFTurn.set(0.15);
+    motorRFTurn.set(0.15);
+  } else if (xAxisRight < -deadband) {
+    motorLBTurn.set(-0.15);
+    motorRBTurn.set(-0.15);
+    motorLFTurn.set(-0.15);
+    motorRFTurn.set(-0.15);
+  } else {
+    motorLBTurn.set(0);
+    motorRBTurn.set(0);
+    motorLFTurn.set(0);
+    motorRFTurn.set(0);
+  }
+
+  }
+  
+
+  /** This function is called once each time the robot enters test mode. */
+  @Override
+  public void testInit() {}
+
+  /** This function is called periodically during test mode. */
+  @Override
+  public void testPeriodic() {}
+}
+
+
