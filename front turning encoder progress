@@ -1,0 +1,163 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot;
+
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.CounterBase.EncodingType;
+
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import edu.wpi.first.wpilibj.AnalogInput;
+//import edu.wpi.first.wpilibj.AnalogTrigger;
+import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PWM;
+
+/**
+ * The VM is configured to automatically run this class, and to call the functions corresponding to
+ * each mode, as described in the TimedRobot documentation. If you change the name of this class or
+ * the package after creating this project, you must also update the build.gradle file in the
+ * project.
+ */
+public class Robot extends TimedRobot {
+
+WPI_TalonSRX FLDmotor = new WPI_TalonSRX(1);
+WPI_TalonSRX FRDmotor = new WPI_TalonSRX(4);
+WPI_TalonSRX BLDmotor = new WPI_TalonSRX(8);
+WPI_TalonSRX BRDmotor = new WPI_TalonSRX(6);
+
+WPI_TalonSRX FLTmotor = new WPI_TalonSRX(2);
+WPI_TalonSRX FRTmotor = new WPI_TalonSRX(3);
+WPI_TalonSRX BLTmotor = new WPI_TalonSRX(7);
+WPI_TalonSRX BRTmotor = new WPI_TalonSRX(5);
+
+//turning encoder
+Encoder FRencoder = new Encoder(8, 9);
+Encoder FLencoder = new Encoder(6,7);
+Encoder BRencoder = new Encoder(1, 0);
+Encoder BLencoder = new Encoder(3, 2);
+
+//drive encoders
+//AnalogInput FLDencoder = new AnalogInput(0);
+//AnalogInput FRDencoder = new AnalogInput(1);
+//AnalogInput BLDencoder = new AnalogInput(2);
+//AnalogInput BRDencoder = new AnalogInput(3);
+
+boolean a;
+double b;
+
+
+Joystick xboxController = new Joystick(0);
+
+double yAxisLeft = 0;
+double xAxisRight = 0;
+
+
+  @Override
+  public void robotInit() {
+  FRencoder.setDistancePerPulse(300./7.);
+  FLencoder.setDistancePerPulse(300./7.);
+  BRencoder.setDistancePerPulse(300./7.);
+  BLencoder.setDistancePerPulse(300./7.);
+
+  FLDmotor.setInverted(true);
+  BLDmotor.setInverted(true);
+
+  FRencoder.reset();
+  FLencoder.reset();
+  BRencoder.reset();
+  BLencoder.reset();
+
+  }
+
+  
+  @Override
+  public void robotPeriodic() {}
+
+  @Override
+  public void autonomousInit() {}
+
+ 
+  @Override
+  public void autonomousPeriodic() {}
+
+
+  @Override
+  public void teleopInit() {
+    FRencoder.reset();
+    FLencoder.reset();
+    BRencoder.reset();
+    BLencoder.reset();
+  }
+
+  public void ReadJoystick(){
+    yAxisLeft = xboxController.getRawAxis(1);
+    xAxisRight = xboxController.getRawAxis(4);
+  }
+
+  public void moveRobot(){
+
+  if (xAxisRight > 0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < 50 && (FRencoder.getDistance()) - (FLencoder.getDistance()) > -50) {
+    FRTmotor.set(0.25);
+    FLTmotor.set(0.25);
+  } else if (xAxisRight > 0.01 && (FRencoder.getDistance() - FLencoder.getDistance()) > 50 ) {
+    FRTmotor.set(0.20);
+    FLTmotor.set(0.25);
+  } else if (xAxisRight > 0.01 && (FRencoder.getDistance() - FLencoder.getDistance()) < -50) {
+    FLTmotor.set(0.20);
+    FRTmotor.set(0.25);
+  } else if (xAxisRight < -0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < 50 && (FRencoder.getDistance()) - (FLencoder.getDistance()) > -50) {
+    FRTmotor.set(-0.25);
+    FLTmotor.set(-0.25);
+  } else if (xAxisRight < -0.01 && (FRencoder.getDistance() - FLencoder.getDistance()) > 50 ) {
+    FRTmotor.set(-0.25);
+    FLTmotor.set(-0.20);
+  } else if (xAxisRight < -0.01 && (FRencoder.getDistance() - FLencoder.getDistance()) < -50) {
+    FLTmotor.set(-0.25);
+    FRTmotor.set(-0.20);
+  } else {
+    FRTmotor.set(0);
+    FLTmotor.set(0);
+  }
+
+  
+}
+
+  @Override
+  public void teleopPeriodic() {
+    ReadJoystick();
+    moveRobot();
+
+
+
+    //System.out.println("FR Stopped = " + FRencoder.getStopped());
+    //System.out.println("PWM Encoder 2 Output = " + encoder2pwm.getRaw());
+    System.out.println("FR Output = " + FRencoder.getDistance());
+    System.out.println("FL Output = " + FLencoder.getDistance());
+    System.out.println("BR Output = " + BRencoder.getDistance());
+    System.out.println("BL Output = " + BLencoder.getDistance());
+    //System.out.println("PWM Encoder 2 Speed = " + encoder2pwm.getSpeed());
+    //System.out.println("Direction " + a);
+
+
+    //System.out.println("front left Encoder =" + (FLDencoder.getVoltage())*100);
+    //System.out.println("front right Encoder =" + (FRDencoder.getVoltage())*100);
+    //System.out.println("back left Encoder =" + (BLDencoder.getVoltage())*100);
+    //System.out.println("back right Encoder =" + (BRDencoder.getVoltage())*100);
+
+
+
+  }
+
+  /** This function is called once when the robot is disabled. */
+  @Override
+  public void disabledInit() {}
+
+  /** This function is called periodically when disabled. */
+  @Override
+  public void disabledPeriodic() {}
+
+  /** This function is called once when test mode is enabled. */
+
+}
