@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
+import edu.wpi.first.wpilibj.interfaces.Accelerometer;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.AnalogInput;
@@ -13,6 +14,8 @@ import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PWM;
+
+import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -49,10 +52,23 @@ Encoder BLencoder = new Encoder(3, 2);
 
 Joystick xboxController = new Joystick(0);
 
+Accelerometer accelerometer = new BuiltInAccelerometer();
+
 double yAxisLeft = 0;
 double xAxisLeft = 0;
 double xAxisRight = 0;
 double encoderOffset = 50;
+
+double yAccel = accelerometer.getY();
+double xAccel = accelerometer.getX();
+
+boolean aButton = false;
+boolean bButton = false;
+boolean xButton = false;
+boolean yButton = false;
+
+boolean rightTrigger = false;
+boolean leftTrigger = false;
 
 
   @Override
@@ -69,6 +85,9 @@ double encoderOffset = 50;
   FLencoder.reset();
   BRencoder.reset();
   BLencoder.reset();
+
+  xAccel = 0;
+  yAccel = 0;
 
   }
 
@@ -96,6 +115,15 @@ double encoderOffset = 50;
     yAxisLeft = xboxController.getRawAxis(1);
     xAxisRight = xboxController.getRawAxis(4);
     xAxisLeft = xboxController.getRawAxis(0);
+
+    aButton = xboxController.getRawButton(1);
+    bButton = xboxController.getRawButton(2);
+    xButton = xboxController.getRawButton(3);
+    yButton = xboxController.getRawButton(4);
+
+    rightTrigger = xboxController.getRawButton(6);
+    leftTrigger = xboxController.getRawButton(5);
+  
   }
 
   public void moveRobot(){
@@ -166,6 +194,120 @@ double encoderOffset = 50;
     BLDmotor.set(0);
   }
 
+  //a button- reset forwards
+    //right
+  if (aButton && FRencoder.getDistance() > 0) {
+    FRTmotor.set(-0.3);
+  }
+  if (aButton && FLencoder.getDistance() > 0) {
+    FLTmotor.set(-0.3);
+  }
+  if (aButton && BLencoder.getDistance() > 0) {
+    BLTmotor.set(-0.3);
+  }
+  if (aButton && BRencoder.getDistance() > 0) {
+    BRTmotor.set(-0.3);
+  }
+
+    //left
+  if (aButton && FRencoder.getDistance() < 0) {
+      FRTmotor.set(0.3);
+  }
+  if (aButton && FLencoder.getDistance() < 0) {
+      FLTmotor.set(0.3);
+  }
+  if (aButton && BLencoder.getDistance() < 0) {
+      BLTmotor.set(0.3);
+  }
+  if (aButton && BRencoder.getDistance() < 0) {
+      BRTmotor.set(0.3);
+  }
+
+
+//serve right
+if (rightTrigger && BRencoder.getDistance() < 2600) {
+  BRTmotor.set(0.3);
+}
+if (rightTrigger && BRencoder.getDistance() > 2600) {
+  BRTmotor.set(-0.3);
+}
+
+if (rightTrigger && BLencoder.getDistance() < 2100) {
+  BLTmotor.set(0.3);
+}
+if (rightTrigger && BLencoder.getDistance() > 2100) {
+  BLTmotor.set(-0.3);
+}
+
+if (rightTrigger && FRencoder.getDistance() < 2800) {
+  FRTmotor.set(0.3);
+}
+if (rightTrigger && FRencoder.getDistance() > 2800) {
+  FRTmotor.set(-0.3);
+}
+
+if (rightTrigger && FLencoder.getDistance() < 2700) {
+  FLTmotor.set(0.3);
+}
+if (rightTrigger && FLencoder.getDistance() > 2700) {
+  FLTmotor.set(-0.3);
+}
+
+//swerve left
+if (leftTrigger && BRencoder.getDistance() < -2600) {
+  BRTmotor.set(0.3);
+}
+if (leftTrigger && BRencoder.getDistance() > -2600) {
+  BRTmotor.set(-0.3);
+}
+
+if (leftTrigger && BLencoder.getDistance() < -2100) {
+  BLTmotor.set(0.3);
+}
+if (leftTrigger && BLencoder.getDistance() > -2100) {
+  BLTmotor.set(-0.3);
+}
+
+if (leftTrigger && FRencoder.getDistance() < -2800) {
+  FRTmotor.set(0.3);
+}
+if (leftTrigger && FRencoder.getDistance() > -2800) {
+  FRTmotor.set(-0.3);
+}
+
+if (leftTrigger && FLencoder.getDistance() < -2700) {
+  FLTmotor.set(0.3);
+}
+if (leftTrigger && FLencoder.getDistance() > -2700) {
+  FLTmotor.set(-0.3);
+}
+
+//spin in circle
+if (yButton && FRencoder.getDistance() > 5900) {
+  FRTmotor.set(-0.3);
+}
+if (yButton && FRencoder.getDistance() < 5900) {
+  FRTmotor.set(0.3);
+}
+if (yButton && FLencoder.getDistance() > 2700) {
+  FLTmotor.set(-0.3);
+}
+if (yButton && FLencoder.getDistance() < 2700) {
+  FLTmotor.set(0.3);
+}
+
+if (yButton && BRencoder.getDistance() > 11000) {
+  BRTmotor.set(-0.3);
+}
+if (yButton && BRencoder.getDistance() < 11000) {
+  BRTmotor.set(0.3);
+}
+if (yButton && BLencoder.getDistance() < -2600) {
+  BLTmotor.set(0.3);
+}
+if (yButton && BLencoder.getDistance() > -2600) {
+  BLTmotor.set(-0.3);
+}
   
 }
 
@@ -182,6 +324,9 @@ double encoderOffset = 50;
     System.out.println("FL Output = " + FLencoder.getDistance());
     System.out.println("BR Output = " + BRencoder.getDistance());
     System.out.println("BL Output = " + BLencoder.getDistance());
+
+    System.out.println("xAccel: " + xAccel);
+    System.out.println("yAccel: " + yAccel);
     //System.out.println("PWM Encoder 2 Speed = " + encoder2pwm.getSpeed());
     //System.out.println("Direction " + a);
 
