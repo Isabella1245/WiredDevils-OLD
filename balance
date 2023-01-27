@@ -40,6 +40,9 @@ Encoder BLencoder = new Encoder(3, 2);
   //joystick initiation
 Joystick xboxController = new Joystick(0);
 
+  //timer
+Timer timer = new Timer();
+
 //navx
 AHRS gyroTwo = new AHRS(SPI.Port.kMXP);
 
@@ -70,22 +73,71 @@ boolean balanceButtonOff = false;
   FLencoder.reset();
   BRencoder.reset();
   BLencoder.reset();
+  
+  //sets timer to zero at the start of the match
+  timer.reset();
 
   gyroTwo.calibrate();
   }
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    timer.reset();
+    timer.start();
+  }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+
+    if (timer.get() < 2.5) {
+      FRDmotor.set(-0.42);
+      FLDmotor.set(-0.42);
+      BRDmotor.set(-0.42);
+      BLDmotor.set(-0.42);
+    } else if (timer.get() > 2.5) {
+      balanceMode = true;
+      if (balanceMode && gyroTwo.getRoll() > 10) {
+        FRDmotor.set(-0.21);
+        FLDmotor.set(-0.21);
+        BRDmotor.set(-0.21);
+        BLDmotor.set(-0.21);
+      } else if (balanceMode && gyroTwo.getRoll() < 10 && gyroTwo.getRoll() > 3) {
+        FRDmotor.set(-0.15);
+        FLDmotor.set(-0.15);
+        BRDmotor.set(-0.15);
+        BLDmotor.set(-0.15);
+      } else if (balanceMode && gyroTwo.getRoll() <= 3 && gyroTwo.getRoll() >= -3) {
+      FRDmotor.set(0);
+      FLDmotor.set(0);
+      BRDmotor.set(0);
+      BLDmotor.set(0);
+      } else if (balanceMode && gyroTwo.getRoll() > -10 && gyroTwo.getRoll() < -2) {
+        FRDmotor.set(0.17);
+        FLDmotor.set(0.17);
+        BRDmotor.set(0.17);
+        BLDmotor.set(0.17);
+      } else if (balanceMode && gyroTwo.getRoll() < -10) {
+        FRDmotor.set(0.19);
+        FLDmotor.set(0.19);
+        BRDmotor.set(0.19);
+        BLDmotor.set(0.19);
+      }
+    } else {
+      FRDmotor.set(0);
+      FLDmotor.set(0);
+      BRDmotor.set(0);
+      BLDmotor.set(0);
+    }
+  }
 
   @Override
   public void teleopInit() {
+    
     FRencoder.reset();
     FLencoder.reset();
     BRencoder.reset();
     BLencoder.reset();
+    
 
     gyroTwo.reset();
   }
@@ -101,7 +153,8 @@ boolean balanceButtonOff = false;
 
   public void moveRobot() {
 
-    //Turning front
+
+    //turning front wheels
   if (xAxisRight > 0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < encoderOffset && (FRencoder.getDistance()) - (FLencoder.getDistance()) > -encoderOffset){
     FRTmotor.set(0.25);
     FLTmotor.set(0.25);
@@ -125,7 +178,9 @@ boolean balanceButtonOff = false;
     FLTmotor.set(0);
   }
 
-  //turning back
+
+ 
+  //turning back wheels
   if (xAxisLeft > 0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) < encoderOffset && (BRencoder.getDistance()) - (BLencoder.getDistance()) > -encoderOffset){
     BRTmotor.set(0.25);
     BLTmotor.set(0.25);
@@ -225,31 +280,31 @@ if (balanceMode == false) {
 }
 
 //automatic balance
-if (balanceMode && gyroTwo.getRoll() > 5) {
-    FRDmotor.set(-0.25);
-    FLDmotor.set(-0.25);
-    BRDmotor.set(-0.25);
-    BLDmotor.set(-0.25);
-} else if (balanceMode && gyroTwo.getRoll() < 5 && gyroTwo.getRoll() > 2) {
-    FRDmotor.set(0.15);
-    FLDmotor.set(0.15);
-    BRDmotor.set(0.15);
-    BLDmotor.set(0.15);
-} else if (balanceMode && gyroTwo.getRoll() < 2 && gyroTwo.getRoll() > -2) {
-  FRDmotor.set(0);
-  FLDmotor.set(0);
-  BRDmotor.set(0);
-  BLDmotor.set(0);
-} else if (balanceMode && gyroTwo.getRoll() > -5 && gyroTwo.getRoll() < -2) {
+if (balanceMode && gyroTwo.getRoll() > 10) {
+    FRDmotor.set(-0.22);
+    FLDmotor.set(-0.22);
+    BRDmotor.set(-0.22);
+    BLDmotor.set(-0.22);
+} else if (balanceMode && gyroTwo.getRoll() < 10 && gyroTwo.getRoll() > 3) {
     FRDmotor.set(-0.15);
     FLDmotor.set(-0.15);
     BRDmotor.set(-0.15);
     BLDmotor.set(-0.15);
-} else if (balanceMode && gyroTwo.getRoll() < -5) {
-  FRDmotor.set(0.25);
-    FLDmotor.set(0.25);
-    BRDmotor.set(0.25);
-    BLDmotor.set(0.25);
+} else if (balanceMode && gyroTwo.getRoll() <= 3 && gyroTwo.getRoll() >= -3) {
+  FRDmotor.set(0);
+  FLDmotor.set(0);
+  BRDmotor.set(0);
+  BLDmotor.set(0);
+} else if (balanceMode && gyroTwo.getRoll() > -10 && gyroTwo.getRoll() < -2) {
+    FRDmotor.set(0.17);
+    FLDmotor.set(0.17);
+    BRDmotor.set(0.17);
+    BLDmotor.set(0.17);
+} else if (balanceMode && gyroTwo.getRoll() < -10) {
+    FRDmotor.set(0.22);
+    FLDmotor.set(0.22);
+    BRDmotor.set(0.22);
+    BLDmotor.set(0.22);
 }
 
 }
