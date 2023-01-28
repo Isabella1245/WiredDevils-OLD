@@ -1,7 +1,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
-//import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
 
@@ -45,7 +45,16 @@ Joystick joystick = new Joystick(0);
 double yAxisLeft = 0;
 double xAxisRight = 0;
 double xAxisLeft = 0;
+boolean bButton = false;
+boolean yButton = false;
+
 double encoderOffset = 50;
+
+//gyro
+double gyroTwoAngle;
+double kP = 0.09;
+double error;
+
 
 
 //gyro initiation
@@ -57,7 +66,10 @@ AHRS gyroTwo = new AHRS(SPI.Port.kMXP);
 //sensor initiation
 AnalogInput sensor = new AnalogInput(0);
 
-//sensor math
+//timer
+Timer timer = new Timer();
+
+//sensor variables
 double rawValue;
 double currentDistanceInInches;
 
@@ -78,13 +90,54 @@ double currentDistanceInInches;
     //gyro
   gyro.calibrate();
   gyroTwo.calibrate();
+
+  FRencoder.reset();
+  FLencoder.reset();
+  BRencoder.reset();
+  BLencoder.reset();
+
+  //timer reset
+  timer.reset();
   }
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    timer.start();
+
+    gyroTwoAngle = gyroTwo.getAngle();
+    
+  }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+
+    error = gyroTwoAngle - gyroTwo.getAngle();
+
+
+    if (timer.get() < 2.5) {
+      FRDmotor.set(-0.5 + (kP * error));
+      FLDmotor.set(-0.5 - (kP * error));
+      BRDmotor.set(-0.5 + (kP * error));
+      BLDmotor.set(-0.5 - (kP * error));
+
+    } else {
+      FRDmotor.set(0);
+      FLDmotor.set(0);
+      BRDmotor.set(0);
+      BLDmotor.set(0);
+    }
+
+    if (timer.get() < 2.4) {
+      System.out.println("navx angle =  " + gyroTwo.getAngle());
+    System.out.println(gyroTwoAngle);
+    System.out.println(FRDmotor.get());
+    System.out.println(FLDmotor.get());
+    System.out.println(BRDmotor.get());
+    System.out.println(BLDmotor.get());
+    System.out.println(kP * error);
+    }
+
+  }
 
   @Override
   public void teleopInit() {
@@ -103,6 +156,8 @@ double currentDistanceInInches;
     yAxisLeft = joystick.getRawAxis(1);
     xAxisRight = joystick.getRawAxis(4);
     xAxisLeft = joystick.getRawAxis(0);
+    bButton = joystick.getRawButton(2);
+    yButton = joystick.getRawButton(4);
   }
 
 
@@ -155,6 +210,28 @@ double currentDistanceInInches;
     BRTmotor.set(0);
     BLTmotor.set(0);
   }
+  
+  //resetting the wheels to forwards
+  if (yButton && FRencoder.getDistance() > 0) {
+    FRTmotor.set(-0.4);
+  } else if (yButton && FRencoder.getDistance() < 0) {
+    FRTmotor.set(0.4);
+  }
+  if (yButton && FLencoder.getDistance() > 0) {
+    FLTmotor.set(-0.4);
+  } else if (yButton && FLencoder.getDistance() < 0) {
+    BLTmotor.set(0.4);
+  }
+  if (yButton && BLencoder.getDistance() > 0) {
+    BLTmotor.set(-0.4);
+  } else if (yButton && BLencoder.getDistance() < 0) {
+    BLTmotor.set(0.4);
+  }
+  if (yButton && BRencoder.getDistance() > 0) {
+    BRTmotor.set(-0.4);
+  } else if (yButton && BRencoder.getDistance() < 0) {
+    BRTmotor.set(0.4);
+  }
 
   //driving
   if (yAxisLeft > 0.5) {
@@ -176,6 +253,7 @@ double currentDistanceInInches;
 
   rawValue = sensor.getVoltage();
   currentDistanceInInches = rawValue * 21.428;
+
 }
 
 
@@ -204,14 +282,16 @@ double currentDistanceInInches;
     /*
     System.out.println("navx angle =  " + gyroTwo.getAngle());
     System.out.println("navx Pitch = " + gyroTwo.getPitch());
+    */
     System.out.println("navx roll = " + gyroTwo.getRoll());
+    /*
     System.out.println("navx accelX = " + gyroTwo.getWorldLinearAccelX());
     System.out.println("navx accelY = " + gyroTwo.getWorldLinearAccelY());
     */
     
-    //sensor prints
-    System.out.println("current distance = " + currentDistanceInInches);
-    System.out.println("voltage = " + sensor.getVoltage());
+    //sensor prints (distance sensor)
+    //System.out.println("current distance = " + currentDistanceInInches);
+    //System.out.println("voltage = " + sensor.getVoltage());
     
 
   }
