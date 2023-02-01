@@ -8,6 +8,14 @@ import edu.wpi.first.wpilibj.RobotController;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import edu.wpi.first.wpilibj.Encoder;
 
+//smart dashboard
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
+//usb camera
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
+
 //gyro imports
 import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
@@ -16,6 +24,9 @@ import edu.wpi.first.wpilibj.SPI;
 
 //sensors imports
 import edu.wpi.first.wpilibj.AnalogInput;
+
+//encoder 2.0
+import edu.wpi.first.wpilibj.PWM;
 
 
 public class Robot extends TimedRobot {
@@ -38,8 +49,12 @@ WPI_TalonSRX BRTmotor = new WPI_TalonSRX(5);
  Encoder BRencoder = new Encoder(1, 0);
  Encoder BLencoder = new Encoder(3, 2);
 
+
   //joystick
 Joystick joystick = new Joystick(0);
+
+//lamprey
+PWM lamprey = new PWM(0);
 
   //variables
 double yAxisLeft = 0;
@@ -54,6 +69,12 @@ double encoderOffset = 50;
 double gyroTwoAngle;
 double kP = 0.09;
 double error;
+
+double FRencoderError;
+double FLencoderError;
+double BRencoderError;
+double BLencoderError;
+double encoderKP = 0.09;
 
 
 
@@ -98,6 +119,11 @@ double currentDistanceInInches;
 
   //timer reset
   timer.reset();
+
+  UsbCamera camera = CameraServer.startAutomaticCapture();
+    camera.setResolution(360, 240);
+    camera.setFPS(30);
+    camera.setExposureManual(50);
   }
 
   @Override
@@ -114,29 +140,91 @@ double currentDistanceInInches;
     error = gyroTwoAngle - gyroTwo.getAngle();
 
 
-    if (timer.get() < 2.5) {
+    if (timer.get() < 1.8) {
       FRDmotor.set(-0.5 + (kP * error));
       FLDmotor.set(-0.5 - (kP * error));
       BRDmotor.set(-0.5 + (kP * error));
       BLDmotor.set(-0.5 - (kP * error));
 
-    } else {
+    } else if (timer.get() > 1.8 && timer.get() < 2.1) {
+      FRDmotor.set(-0.5);
+      FLDmotor.set(-0.5);
+      BRDmotor.set(-0.5);
+      BLDmotor.set(-0.5);
+
+      FRencoderError = (1000 - FRencoder.get()) / 225;
+      FLencoderError = (1000 - FLencoder.get()) / 225;
+      BRencoderError = (1000 - BRencoder.get()) / 225;
+      BLencoderError = (1000 - BLencoder.get()) / 225;
+      
+      FRTmotor.set(0 + (encoderKP * FRencoderError));
+      FLTmotor.set(0 + (encoderKP * FLencoderError));
+      BRTmotor.set(0 + (encoderKP * BRencoderError));
+      BLTmotor.set(0 + (encoderKP * BLencoderError));
+
+    } else if (timer.get() > 2.1 && timer.get() < 2.4) {
+      FRDmotor.set(-0.5);
+      FLDmotor.set(-0.5);
+      BRDmotor.set(-0.5);
+      BLDmotor.set(-0.5);
+
+      FRencoderError = (4500 - FRencoder.get()) / 1050;
+      FLencoderError = (4500 - FLencoder.get()) / 1050;
+      BRencoderError = (4500 - BRencoder.get()) / 1050;
+      BLencoderError = (4500 - BLencoder.get()) / 1050;
+      
+      FRTmotor.set(0 + (encoderKP * FRencoderError));
+      FLTmotor.set(0 + (encoderKP * FLencoderError));
+      BRTmotor.set(0 + (encoderKP * BRencoderError));
+      BLTmotor.set(0 + (encoderKP * BLencoderError));
+
+    } else if (timer.get() > 2.4 && timer.get() < 2.7) {
+      FRDmotor.set(-0.5);
+      FLDmotor.set(-0.5);
+      BRDmotor.set(-0.5);
+      BLDmotor.set(-0.5);
+
+      FRTmotor.set(0);
+      FLTmotor.set(0);
+      BRTmotor.set(0);
+      BLTmotor.set(0);
+
+    }
+    
+    else {
       FRDmotor.set(0);
       FLDmotor.set(0);
       BRDmotor.set(0);
       BLDmotor.set(0);
+
+      FRTmotor.set(0);
+      FLTmotor.set(0);
+      BRTmotor.set(0);
+      BLTmotor.set(0);
     }
 
     if (timer.get() < 2.4) {
-      System.out.println("navx angle =  " + gyroTwo.getAngle());
-    System.out.println(gyroTwoAngle);
-    System.out.println(FRDmotor.get());
-    System.out.println(FLDmotor.get());
-    System.out.println(BRDmotor.get());
-    System.out.println(BLDmotor.get());
-    System.out.println(kP * error);
+      SmartDashboard.putNumber("gyroTwo Angle", gyroTwoAngle);
+    SmartDashboard.putNumber("FRDmotor", FRDmotor.get());
+    SmartDashboard.putNumber("FLDmotor", FLDmotor.get());
+    SmartDashboard.putNumber("BRDmotor", BRDmotor.get());
+    SmartDashboard.putNumber("BLDmotor", BLDmotor.get());
+    SmartDashboard.putNumber("error", kP * error);
+    SmartDashboard.putNumber("FRTencoder", FRencoder.getDistance());
+    SmartDashboard.putNumber("FLTencoder", FLencoder.getDistance());
+    SmartDashboard.putNumber("BRTencoder", BRencoder.getDistance());
+    SmartDashboard.putNumber("BLTencoder", BLencoder.getDistance());
+    SmartDashboard.putNumber("FRT lamprey", lamprey.getPosition());
+
+    SmartDashboard.putNumber("FR Output = " , (0 + (encoderKP * FRencoderError)));
+    SmartDashboard.putNumber("FL Output = " , (0 + (encoderKP * FLencoderError)));
+    SmartDashboard.putNumber("BR Output = " , (0 + (encoderKP * BRencoderError)));
+    SmartDashboard.putNumber("BL Output = " , (0 + (encoderKP * BLencoderError)));
+
+    
     }
 
+    
   }
 
   @Override
@@ -265,10 +353,10 @@ double currentDistanceInInches;
    
 
     //print out turn encoder values
-    //System.out.println("FR Output = " + FRencoder.getDistance());
-    //System.out.println("FL Output = " + FLencoder.getDistance());
-    //System.out.println("BR Output = " + BRencoder.getDistance());
-    //System.out.println("BL Output = " + BLencoder.getDistance());
+    System.out.println("FR Output = " + FRencoder.getDistance());
+    System.out.println("FL Output = " + FLencoder.getDistance());
+    System.out.println("BR Output = " + BRencoder.getDistance());
+    System.out.println("BL Output = " + BLencoder.getDistance());
     
     
     //gyro prints
