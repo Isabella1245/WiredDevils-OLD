@@ -5,349 +5,188 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.CounterBase.EncodingType;
-import edu.wpi.first.wpilibj.interfaces.Accelerometer;
-
+import edu.wpi.first.wpilibj.Timer;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
-import edu.wpi.first.wpilibj.AnalogInput;
-//import edu.wpi.first.wpilibj.AnalogTrigger;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PWM;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.AnalogPotentiometer;
+import edu.wpi.first.wpilibj.Encoder;
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Counter;
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import edu.wpi.first.wpilibj.BuiltInAccelerometer;
-
-/**
- * The VM is configured to automatically run this class, and to call the functions corresponding to
- * each mode, as described in the TimedRobot documentation. If you change the name of this class or
- * the package after creating this project, you must also update the build.gradle file in the
- * project.
- */
 public class Robot extends TimedRobot {
 
-  //drive motors
-WPI_TalonSRX FLDmotor = new WPI_TalonSRX(1);
-WPI_TalonSRX FRDmotor = new WPI_TalonSRX(4);
-WPI_TalonSRX BLDmotor = new WPI_TalonSRX(8);
-WPI_TalonSRX BRDmotor = new WPI_TalonSRX(6);
+  //DRIVE MOTORS
+  WPI_TalonSRX FRDmotor = new WPI_TalonSRX(4);
+  WPI_TalonSRX FLDmotor = new WPI_TalonSRX(1);
+  WPI_TalonSRX BRDmotor = new WPI_TalonSRX(6);
+  WPI_TalonSRX BLDmotor = new WPI_TalonSRX(8);
 
-  //turn motors
-WPI_TalonSRX FLTmotor = new WPI_TalonSRX(2);
-WPI_TalonSRX FRTmotor = new WPI_TalonSRX(3);
-WPI_TalonSRX BLTmotor = new WPI_TalonSRX(7);
-WPI_TalonSRX BRTmotor = new WPI_TalonSRX(5);
+  //TURNING MOTORS
+  WPI_TalonSRX BLTmotor = new WPI_TalonSRX(2);
+  WPI_TalonSRX BRTmotor = new WPI_TalonSRX(5);
+  WPI_TalonSRX FLTmotor = new WPI_TalonSRX(7);
+  WPI_TalonSRX FRTmotor = new WPI_TalonSRX(3);
 
-  //turning encoder
-Encoder FRencoder = new Encoder(8, 9);
-Encoder FLencoder = new Encoder(6,7);
-Encoder BRencoder = new Encoder(1, 0);
-Encoder BLencoder = new Encoder(3, 2);
+  //encoders
+  Encoder FRencoder = new Encoder(8, 9);
+  Encoder FLencoder = new Encoder(6, 7);
+  Encoder BRencoder = new Encoder(1, 0);
+  Encoder BLencoder = new Encoder(3, 2);
 
-//drive encoders
-//AnalogInput FLDencoder = new AnalogInput(0);
-//AnalogInput FRDencoder = new AnalogInput(1);
-//AnalogInput BLDencoder = new AnalogInput(2);
-//AnalogInput BRDencoder = new AnalogInput(3);
+  //gyro
+  AHRS navX = new AHRS(SPI.Port.kMXP);
+
+  //LOWER CONTROLS
+  double yAxisLower = 0;
+  double xAxisLower = 0;
+  double zAxisLower = 0;
+  double slider = -1;
+
+  //UPPER CONTROLS
+  double yAxisLeftUpper = 0;
+  double xAxisRightUpper = 0;
+  double rightTriggerUpper = 0;
+  double leftTriggerUpper = 0;
+
+  boolean balanceModeOn = false;
+  boolean balanceModeOff = true;
 
 
-Joystick xboxController = new Joystick(0);
+  //VARIABLES
+  double deadband = 0.1;
+  double speedFactor = (0.5 * slider) + 0.5;
+  boolean balanceMode = false;
+  
+  double joystickSpeed = Math.sqrt((yAxisLower * yAxisLower) + (xAxisLower * xAxisLower));
+  double angle = Math.atan(xAxisLower/yAxisLower);
+  double angleToEncoder = (angle - 0.202) / 0.0207;
+  double FRencoderToAngle = (0.0207 * FRencoder.getDistance()) + 0.202;
+  
+  double FRencoderError = angle - FRencoderToAngle;
+  double FLencoderError;
+  double BRencoderError;
+  double BLencoderError;
+  double encoderKP = 0.09;
 
-Accelerometer accelerometer = new BuiltInAccelerometer();
-
-double yAxisLeft = 0;
-double xAxisLeft = 0;
-double xAxisRight = 0;
-double encoderOffset = 50;
-
-double yAccel = accelerometer.getY();
-double xAccel = accelerometer.getX();
-
-boolean aButton = false;
-boolean bButton = false;
-boolean xButton = false;
-boolean yButton = false;
-
-boolean rightTrigger = false;
-boolean leftTrigger = false;
-
+  //JOYSTICKS
+  Joystick joystickLower = new Joystick(1);
+  Joystick xboxUpper = new Joystick(0);
+  
 
   @Override
   public void robotInit() {
+
   FRencoder.setDistancePerPulse(300./7.);
   FLencoder.setDistancePerPulse(300./7.);
   BRencoder.setDistancePerPulse(300./7.);
   BLencoder.setDistancePerPulse(300./7.);
 
+  //invert the wheels that are positioned backwards 
   FLDmotor.setInverted(true);
   BLDmotor.setInverted(true);
 
-  FRencoder.reset();
-  FLencoder.reset();
-  BRencoder.reset();
-  BLencoder.reset();
-
-  xAccel = 0;
-  yAccel = 0;
-
-  }
-
-  
-  @Override
-  public void robotPeriodic() {}
-
-  @Override
-  public void autonomousInit() {}
-
- 
-  @Override
-  public void autonomousPeriodic() {}
-
-
-  @Override
-  public void teleopInit() {
+    //reset the encoders in the beginning when the robot initiates
     FRencoder.reset();
     FLencoder.reset();
     BRencoder.reset();
     BLencoder.reset();
+
+    //reset the navx gyro when the robot initiates
+    navX.reset();
   }
 
-  public void ReadJoystick(){
-    yAxisLeft = xboxController.getRawAxis(1);
-    xAxisRight = xboxController.getRawAxis(4);
-    xAxisLeft = xboxController.getRawAxis(0);
+  @Override
+  public void autonomousInit() {}
 
-    aButton = xboxController.getRawButton(1);
-    bButton = xboxController.getRawButton(2);
-    xButton = xboxController.getRawButton(3);
-    yButton = xboxController.getRawButton(4);
+  @Override
+  public void autonomousPeriodic() {}
 
-    rightTrigger = xboxController.getRawButton(6);
-    leftTrigger = xboxController.getRawButton(5);
-  
-  }
-
-  public void moveRobot(){
-
-    //Turning front
-  if (xAxisRight > 0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < encoderOffset && (FRencoder.getDistance()) - (FLencoder.getDistance()) > -encoderOffset){
-    FRTmotor.set(0.25);
-    FLTmotor.set(0.25);
-  } else if (xAxisRight > 0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) > encoderOffset ) {
-    FRTmotor.set(0.25);
-    FLTmotor.set(0.45);
-  } else if (xAxisRight > 0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < -encoderOffset) {
-    FRTmotor.set(0.45);
-    FLTmotor.set(0.25);
-  } else if (xAxisRight < -0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < encoderOffset && (FRencoder.getDistance()) - (FLencoder.getDistance()) > -encoderOffset) {
-    FRTmotor.set(-0.25);
-    FLTmotor.set(-0.25);
-  } else if (xAxisRight < -0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) > encoderOffset) {
-    FRTmotor.set(-0.45);
-    FLTmotor.set(-0.25);
-  } else if (xAxisRight < -0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < -encoderOffset) {
-    FLTmotor.set(-0.45);
-    FRTmotor.set(-0.25);
-  } else {
-    FRTmotor.set(0);
-    FLTmotor.set(0);
-  }
-
-  //turning back
-  if (xAxisLeft > 0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) < encoderOffset && (BRencoder.getDistance()) - (BLencoder.getDistance()) > -encoderOffset){
-    BRTmotor.set(0.25);
-    BLTmotor.set(0.25);
-  } else if (xAxisLeft > 0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) > encoderOffset ) {
-    BRTmotor.set(0.25);
-    BLTmotor.set(0.45);
-  } else if (xAxisLeft > 0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) < -encoderOffset) {
-    BRTmotor.set(0.45);
-    BLTmotor.set(0.25);
-  } else if (xAxisLeft < -0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) < encoderOffset && (BRencoder.getDistance()) - (BLencoder.getDistance()) > -encoderOffset) {
-    BRTmotor.set(-0.25);
-    BLTmotor.set(-0.25);
-  } else if (xAxisLeft < -0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) > encoderOffset) {
-    BRTmotor.set(-0.45);
-    BLTmotor.set(-0.25);
-  } else if (xAxisLeft < -0.5 && (BRencoder.getDistance() - BLencoder.getDistance()) < -encoderOffset) {
-    BLTmotor.set(-0.45);
-    BRTmotor.set(-0.25);
-  } else {
-    BRTmotor.set(0);
-    BLTmotor.set(0);
-  }
-
-  //driving
-  if (yAxisLeft > 0.5) {
-    FRDmotor.set(0.4);
-    FLDmotor.set(0.4);
-    BRDmotor.set(0.4);
-    BLDmotor.set(0.4);
-  } else if (yAxisLeft < -0.5) {
-    FRDmotor.set(-0.4);
-    FLDmotor.set(-0.4);
-    BRDmotor.set(-0.4);
-    BLDmotor.set(-0.4);
-  } else {
-    FRDmotor.set(0);
-    FLDmotor.set(0);
-    BRDmotor.set(0);
-    BLDmotor.set(0);
-  }
-
-  //a button- reset forwards
-    //right
-  if (aButton && FRencoder.getDistance() > 0) {
-    FRTmotor.set(-0.3);
-  }
-  if (aButton && FLencoder.getDistance() > 0) {
-    FLTmotor.set(-0.3);
-  }
-  if (aButton && BLencoder.getDistance() > 0) {
-    BLTmotor.set(-0.3);
-  }
-  if (aButton && BRencoder.getDistance() > 0) {
-    BRTmotor.set(-0.3);
-  }
-
-    //left
-  if (aButton && FRencoder.getDistance() < 0) {
-      FRTmotor.set(0.3);
-  }
-  if (aButton && FLencoder.getDistance() < 0) {
-      FLTmotor.set(0.3);
-  }
-  if (aButton && BLencoder.getDistance() < 0) {
-      BLTmotor.set(0.3);
-  }
-  if (aButton && BRencoder.getDistance() < 0) {
-      BRTmotor.set(0.3);
-  }
-
-
-//serve right
-if (rightTrigger && BRencoder.getDistance() < 2600) {
-  BRTmotor.set(0.3);
-}
-if (rightTrigger && BRencoder.getDistance() > 2600) {
-  BRTmotor.set(-0.3);
-}
-
-if (rightTrigger && BLencoder.getDistance() < 2100) {
-  BLTmotor.set(0.3);
-}
-if (rightTrigger && BLencoder.getDistance() > 2100) {
-  BLTmotor.set(-0.3);
-}
-
-if (rightTrigger && FRencoder.getDistance() < 2800) {
-  FRTmotor.set(0.3);
-}
-if (rightTrigger && FRencoder.getDistance() > 2800) {
-  FRTmotor.set(-0.3);
-}
-
-if (rightTrigger && FLencoder.getDistance() < 2700) {
-  FLTmotor.set(0.3);
-}
-if (rightTrigger && FLencoder.getDistance() > 2700) {
-  FLTmotor.set(-0.3);
-}
-
-//swerve left
-if (leftTrigger && BRencoder.getDistance() < -2600) {
-  BRTmotor.set(0.3);
-}
-if (leftTrigger && BRencoder.getDistance() > -2600) {
-  BRTmotor.set(-0.3);
-}
-
-if (leftTrigger && BLencoder.getDistance() < -2100) {
-  BLTmotor.set(0.3);
-}
-if (leftTrigger && BLencoder.getDistance() > -2100) {
-  BLTmotor.set(-0.3);
-}
-
-if (leftTrigger && FRencoder.getDistance() < -2800) {
-  FRTmotor.set(0.3);
-}
-if (leftTrigger && FRencoder.getDistance() > -2800) {
-  FRTmotor.set(-0.3);
-}
-
-if (leftTrigger && FLencoder.getDistance() < -2700) {
-  FLTmotor.set(0.3);
-}
-if (leftTrigger && FLencoder.getDistance() > -2700) {
-  FLTmotor.set(-0.3);
-}
-
-//spin in circle
-if (yButton && FRencoder.getDistance() > 5900) {
-  FRTmotor.set(-0.3);
-}
-if (yButton && FRencoder.getDistance() < 5900) {
-  FRTmotor.set(0.3);
-}
-if (yButton && FLencoder.getDistance() > 2700) {
-  FLTmotor.set(-0.3);
-}
-if (yButton && FLencoder.getDistance() < 2700) {
-  FLTmotor.set(0.3);
-}
-
-if (yButton && BRencoder.getDistance() > 11000) {
-  BRTmotor.set(-0.3);
-}
-if (yButton && BRencoder.getDistance() < 11000) {
-  BRTmotor.set(0.3);
-}
-if (yButton && BLencoder.getDistance() < -2600) {
-  BLTmotor.set(0.3);
-}
-if (yButton && BLencoder.getDistance() > -2600) {
-  BLTmotor.set(-0.3);
-}
-  
-}
+  @Override
+  public void teleopInit() {}
 
   @Override
   public void teleopPeriodic() {
-    ReadJoystick();
-    moveRobot();
+   ReadJoystick();
+    ReadSensors();
+    MoveRobot();
 
+    
+    SmartDashboard.putNumber("FRencoder", FRencoder.getDistance());
+  }
 
+  public void ReadJoystick(){
 
-    //System.out.println("FR Stopped = " + FRencoder.getStopped());
-    //System.out.println("PWM Encoder 2 Output = " + encoder2pwm.getRaw());
-    System.out.println("FR Output = " + FRencoder.getDistance());
-    System.out.println("FL Output = " + FLencoder.getDistance());
-    System.out.println("BR Output = " + BRencoder.getDistance());
-    System.out.println("BL Output = " + BLencoder.getDistance());
+    //upper
+    yAxisLeftUpper = xboxUpper.getRawAxis(1) * -1;
+    xAxisRightUpper = xboxUpper.getRawAxis(4);
+    rightTriggerUpper = xboxUpper.getRawAxis(3);
+    leftTriggerUpper = xboxUpper.getRawAxis(2);
+    balanceModeOn = xboxUpper.getRawButton(8);
+    balanceModeOff = xboxUpper.getRawButton(7);
 
-    System.out.println("xAccel: " + xAccel);
-    System.out.println("yAccel: " + yAccel);
-    //System.out.println("PWM Encoder 2 Speed = " + encoder2pwm.getSpeed());
-    //System.out.println("Direction " + a);
-
-
-    //System.out.println("front left Encoder =" + (FLDencoder.getVoltage())*100);
-    //System.out.println("front right Encoder =" + (FRDencoder.getVoltage())*100);
-    //System.out.println("back left Encoder =" + (BLDencoder.getVoltage())*100);
-    //System.out.println("back right Encoder =" + (BRDencoder.getVoltage())*100);
-
-
+    //lower
+    yAxisLower = joystickLower.getRawAxis(1) * -1;
+    xAxisLower = joystickLower.getRawAxis(0);
+    zAxisLower = joystickLower.getRawAxis(2);
+    slider = joystickLower.getRawAxis(3) * -1;
 
   }
 
-  /** This function is called once when the robot is disabled. */
+  public void ReadSensors(){}
+
+  public void MoveRobot(){ 
+  
+  //IMPORTANT
+  //in driver station, if you look at the controller's connection, the left y axis seems to be 
+  //inverted for some reason, same with the joystick and slider???
+
+  // deadband 1
+    if (yAxisLower < 0.2 && yAxisLower > -0.2 && xAxisLower < 0.2 && xAxisLower > -0.2) {
+      FRDmotor.set(0);
+      FLDmotor.set(0);
+      BRDmotor.set(0);
+      BLDmotor.set(0);
+
+      FRTmotor.set(0);
+      FLTmotor.set(0);
+      BRTmotor.set(0);
+      BLTmotor.set(0);
+    }
+
+    if (yAxisLower > 0.2 || yAxisLower < -0.2 || xAxisLower > 0.2 || xAxisLower < -0.2) {
+      if (yAxisLower > 0) {
+        FRDmotor.set(joystickSpeed * speedFactor);
+        FLDmotor.set(joystickSpeed * speedFactor);
+        BRDmotor.set(joystickSpeed * speedFactor);
+        BLDmotor.set(joystickSpeed * speedFactor);
+
+        FRTmotor.set(0 + (encoderKP * FRencoderError));
+
+      } else if (yAxisLower < 0) {
+        FRDmotor.set(joystickSpeed * speedFactor * -1);
+        FLDmotor.set(joystickSpeed * speedFactor * -1);
+        BRDmotor.set(joystickSpeed * speedFactor * -1);
+        BLDmotor.set(joystickSpeed * speedFactor * -1);
+      }else{
+
+      FRTmotor.set(0);
+      FLTmotor.set(0);
+      BRTmotor.set(0);
+      BLTmotor.set(0);
+      }
+    }
+  }
+  
   @Override
-  public void disabledInit() {}
+  public void testInit() {}
 
-  /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {}
-
-  /** This function is called once when test mode is enabled. */
-
+  public void testPeriodic() {}
 }
+
