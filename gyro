@@ -28,6 +28,11 @@ import edu.wpi.first.wpilibj.AnalogInput;
 //encoder 2.0
 import edu.wpi.first.wpilibj.PWM;
 
+//pneumatics
+import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Counter;
 
 public class Robot extends TimedRobot {
 
@@ -62,6 +67,8 @@ double xAxisRight = 0;
 double xAxisLeft = 0;
 boolean bButton = false;
 boolean yButton = false;
+boolean xButton = false;
+boolean aButton = false;
 
 double encoderOffset = 50;
 
@@ -89,6 +96,13 @@ AnalogInput sensor = new AnalogInput(0);
 
 //timer
 Timer timer = new Timer();
+
+//pneumatics
+Compressor compressor = new Compressor(0, PneumaticsModuleType.CTREPCM);
+Solenoid solenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 0);
+Counter counter = new Counter(5);
+
+
 
 //sensor variables
 double rawValue;
@@ -246,10 +260,22 @@ double currentDistanceInInches;
     xAxisLeft = joystick.getRawAxis(0);
     bButton = joystick.getRawButton(2);
     yButton = joystick.getRawButton(4);
+    xButton = joystick.getRawButton(3);
+    aButton = joystick.getRawButton(1);
   }
 
 
   public void moveRobot(){
+
+    //pneumatics
+    if (xButton) {
+      solenoid.set(false);
+    }
+    if (aButton) {
+      solenoid.set(true);
+    }
+
+
 
     //Turning front
   if (xAxisRight > 0.1 && (FRencoder.getDistance() - FLencoder.getDistance()) < encoderOffset && (FRencoder.getDistance()) - (FLencoder.getDistance()) > -encoderOffset){
@@ -347,16 +373,33 @@ double currentDistanceInInches;
 
   @Override
   public void teleopPeriodic() {
+    boolean compressorEnabled = compressor.isEnabled();
+    boolean compressorPressureSwitch = compressor.getPressureSwitchValue();
+    double currentCompressor = compressor.getCurrent();
+    double currentPressure = compressor.getPressure();
+    boolean solenoidState = solenoid.get();
 
     ReadJoystick();
     moveRobot();
+
+    //pneumatic prints
+    SmartDashboard.putBoolean("compressor enables", compressorEnabled);
+    SmartDashboard.putBoolean("compressor pressure switch", compressorPressureSwitch);
+    SmartDashboard.putBoolean("solenoid state", solenoidState);
+    SmartDashboard.putNumber("current compressor", currentCompressor);
+    SmartDashboard.putNumber("current pressures", currentPressure);
+    SmartDashboard.putNumber("counter distance", counter.getDistance());
+    SmartDashboard.putNumber("counter rate", counter.getRate());
+    SmartDashboard.putNumber("counter.get", counter.get());
+
+
    
 
     //print out turn encoder values
-    System.out.println("FR Output = " + FRencoder.getDistance());
-    System.out.println("FL Output = " + FLencoder.getDistance());
-    System.out.println("BR Output = " + BRencoder.getDistance());
-    System.out.println("BL Output = " + BLencoder.getDistance());
+    //System.out.println("FR Output = " + FRencoder.getDistance());
+    //System.out.println("FL Output = " + FLencoder.getDistance());
+    //System.out.println("BR Output = " + BRencoder.getDistance());
+    //System.out.println("BL Output = " + BLencoder.getDistance());
     
     
     //gyro prints
@@ -371,7 +414,7 @@ double currentDistanceInInches;
     System.out.println("navx angle =  " + gyroTwo.getAngle());
     System.out.println("navx Pitch = " + gyroTwo.getPitch());
     */
-    System.out.println("navx roll = " + gyroTwo.getRoll());
+    //System.out.println("navx roll = " + gyroTwo.getRoll());
     /*
     System.out.println("navx accelX = " + gyroTwo.getWorldLinearAccelX());
     System.out.println("navx accelY = " + gyroTwo.getWorldLinearAccelY());
