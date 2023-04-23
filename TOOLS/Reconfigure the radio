@@ -2,7 +2,7 @@ Make sure the radio is connected to a the computer AND to a power source
 Open the FRC Radio Configuration Utility
     - if the computer does not have this application, download it from here (don't download the Israel one):
     https://docs.wpilib.org/en/stable/docs/zero-to-robot/step-3/radio-programming.html
-Follow the instructions on the app, fill in teh information required
+Follow the instructions on the app, fill in the information required
     - Team Number: 5498
     - Robot Name
     - we do not have a WPA Key
